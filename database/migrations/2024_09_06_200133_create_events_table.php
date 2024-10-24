@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\EventOrganizer;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migration;
@@ -29,8 +30,10 @@ return new class extends Migration
             $table->time("end_time")->nullable();
 
             $table->boolean("is_complete")->default(false)->nullable();
+            $table->boolean("is_free")->default(false)->nullable();
             $table->enum("type", ['physical','virtual', 'hybrid'])->default('physical');
-            $table->string('organizer_id')->nullable();
+
+            $table->foreignIdFor(EventOrganizer::class,'event_organizer_id')->nullable();
             $table->timestamps();
         });
     }
@@ -40,6 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Schema::dropIfExists('events');
+        Schema::dropIfExists('events');
     }
 };

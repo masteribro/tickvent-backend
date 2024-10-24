@@ -14,6 +14,10 @@ class Event extends Model
         'id'
     ];
 
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
+    
     public function getNameAttribute($value) 
     {
         return Str::title($value);
@@ -21,5 +25,11 @@ class Event extends Model
     public function getImagesAttribute() 
     {
         return EventImage::where("event_id", $this->id)->get();
+    }
+
+    public function getEventOrganizerAttribut()
+
+    {
+        return EventOrganizer::where("id", $this->organizer_id)->first();
     }
 }

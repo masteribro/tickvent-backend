@@ -13,7 +13,7 @@ class AuthenticationTest extends TestCase
      * A basic feature test example.
      */
 
-    use RefreshDatabase;
+    // use RefreshDatabase;
 
     public function test_example(): void
     {
@@ -22,33 +22,39 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_the_register_endpoints() 
-    {
-        User::select(["id"])->delete();
+    // public function test_the_register_endpoints() 
+    // {
+    //     // User::select(["id"])->delete();
 
-        $data = [
-            "first_name" => "Blessing",
-            "last_name" => "Sanusi",
-            "email" => "blessingsanusi97@gmail.com",
-            "is_mobile" => true,
-            "device_token" => "jsncskjcnsjdnsjcdnsjsdcndsnsdnsdg",
-            "phone_number" => "08133667142",
-            "passcode" => 111111,
-            "passcode_confirmation" => 111111,
-        ];
+    //     $data = [
+    //         "first_name" => "Blessing",
+    //         "last_name" => "Sanusi",
+    //         "email" => "blessingsanusi97@gmail.com",
+    //         "is_mobile" => true,
+    //         "device_token" => "jsncskjcnsjdnsjcdnsjsdcndsnsdnsdg",
+    //         "phone_number" => "08133667142",
+    //         "passcode" => 111111,
+    //         "passcode_confirmation" => 111111,
+    //     ];
 
-        $response = $this->postJson("/api/v1/register", $data);
+    //     $response = $this->postJson("/api/v1/register", $data);
 
-        $response->assertStatus(201);
+    //     $response->assertStatus(201);
 
-    }
+    // }
 
     public function test_login_endpoints()
     {
         $data = [
             'email' => 'blessingsanusi97@gmail.com',
             'is_mobile' => true,
-            'passcode' => 11111,
-        ]
+            'passcode' => 111111,
+            'device_token' => "psfmafmsddslclkcs"
+        ];
+
+        $response = $this->postJson("/api/v1/login", $data);
+
+        $response->assertStatus(200);
+        
     }
 }

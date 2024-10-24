@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\RequestHelper;
 use App\Helpers\ResponseHelper;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\EventOrganizer;
+use App\Models\EventTag;
+use App\Models\Ticket;
 use App\Services\EventImageService;
 use App\Services\ReminderService;
 use App\Services\TagsService;
@@ -17,21 +20,49 @@ use Illuminate\Support\Str;
 
 class EventApiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+   
     public function index(Request $request)
     {
-        // comming  back to you
+        // comming  back to you 
+        try {
+            
+            $tags = $request->tags ?? [];
+            $date = $request->date ?? "";
+            $slug = $request->slug ?? "";
+            
+            $events = Event::where('is_complete', true);
+
+            if(!empty($tags)) {
+                $event_tags = collect(EventTag::whereIn("slug",$tags)->select(['event_id'])->get())->values();
+
+                $events = $events->whereIn("id", $event_tags);
+            }
+
+            if($date) {
+                $events = $events->orWhere('start_date', $date);
+            }
+
+            if($slug) {
+                $events = $events->orWhere('slug', $slug);
+            }
+            
+            $events->get();
+
+        } catch(\Throwable $throwable) {
+            Log::warning("Getting Events Error",[
+                "" => $throwable
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to process event");
+        
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+   
     public function createEvent(Request $request)
     {
         try {
-                $user = auth('sanctum')->user();
+                $user = auth("sanctum")->user();
 
                 $validator = \Validator::make($request->all(),[
                     "name" => "required|string",
@@ -112,9 +143,6 @@ class EventApiController extends Controller
         return ResponseHelper::errorResponse("Unable to create event");
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function addOrganizer(Request $request)
     {
         try {
@@ -160,29 +188,75 @@ class EventApiController extends Controller
 
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, Event $event)
+    
+    public function getEvent(Request $request, $idOrSlug)
     {
-        //
+        try {
+            $event = Event::where("slug", $idOrSlug)->orWhere('id', $idOrSlug)->first();
+
+            if($event) {
+                return ResponseHelper::successResponse("Event retrieved successfully", $event);
+            } else {
+                return ResponseHelper::errorResponse("Event not found");
+            }
+        } catch (\Throwable $throwable) {
+            Log::warning("Show specific events", [
+                "get event error" => $throwable
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to process request");
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function addTicket(Request $request, Event $event)
+    public function addTickets(Request $request)
     {
-        //
+        try {
+
+            $validator = \Validator::make($request->all(),[
+                'event_id' => 'required|exists:events,id',
+                'is_free' => 'required|boolean',
+                'tickets' => 'required_if:is_free,false|array',
+                'tickets.*.type' => 'required|string',
+                'tickets.*.price' => 'required|decimal:2|string',
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+            $event = Event::find($request->event_id);
+
+            if($request->is_free) {
+                $event->is_free = true;
+            } else {
+                $tickets = collect($request->tickets);
+                $tickets->each(function ($ticket) use ($request) {
+                    Ticket::create([
+                        'event_id' => $request->event_id,
+                        'type' => $ticket["type"],
+                        'slug' => Str::slug($ticket["type"]),
+                        'price' => $ticket["price"],
+                    ]);
+                    Log::warning("Tickets created");
+                });
+            }
+
+            $event->is_complete = true;
+            $event->save();
+
+            return ResponseHelper::successResponse("Tickets for the events created");
+
+            } catch(\Throwable $throwable) {
+                Log::warning("Creating tickets error", [
+                    "error" => $throwable
+                ]);
+            }
+
+        return ResponseHelper::errorResponse("Unable to add tickets, try again later");
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    
     public function destroy(Request $request, Event $event)
     {
         

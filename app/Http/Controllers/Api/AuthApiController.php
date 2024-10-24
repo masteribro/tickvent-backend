@@ -70,15 +70,19 @@ class AuthApiController extends Controller
             ]);
     
             if($validation->fails()){
+                Log::warning("Validation error");
                 return ResponseHelper::errorResponse("Validation Error",$validation->errors());
             }
 
             $user = UserService::getUser($request->email); 
             if(!Hash::check($request->passcode ?? $request->password, $user->password)) {
+                Log::warning("Invalid credentials");
                 return ResponseHelper::errorResponse("Invalid credentials");
             }
             
             if($user->email_verified_at == null) {
+                Log::warning("user not verified");
+
                 UserVerificationJob::dispatch($user);
 
                 return ResponseHelper::errorResponse("User not verifed",$user);
