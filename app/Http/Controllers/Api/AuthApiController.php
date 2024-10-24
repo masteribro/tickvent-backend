@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Jobs\UserVerificationJob;
+use App\Models\Notification;
 use App\Models\User;
 use App\Services\OtpService;
 use App\Services\UserService;
@@ -21,13 +22,13 @@ class AuthApiController extends Controller
     {
        try {
         $validation = Validator::make($request->all(), [
-            "first_name" => "required|string",
-            "last_name" => "required|string",
+           // "first_name" => "required|string",
+           // "last_name" => "required|string",
             "email" => "required|email|unique:users,email",
             "is_mobile" => "required|boolean",
             "device_token" => "required_if:is_mobile,true|string",
             "address" => "nullable|string",
-            "phone_number" => "required|string|unique:users,phone_number|regex:/0[7-9][0-1]\d{8}/",
+            // "phone_number" => "required|string|unique:users,phone_number|regex:/0[7-9][0-1]\d{8}/",
             "passcode" => "required_if:is_mobile,true|digits:6|confirmed",
             "password" => ["required_if:is_mobile,false","confirmed", Password::min(8)->mixedCase()->letters()->symbols()]
         ]);
@@ -45,13 +46,13 @@ class AuthApiController extends Controller
 
         $user->save();
 
-        UserVerificationJob::dispatch($user);
+        // UserVerificationJob::dispatch($user);
 
-        return ResponseHelper::successResponse("Registration successfull", $user->select(['first_name', 'last_name','email','api_token','phone_number'])->get(),201);
+        return ResponseHelper::successResponse("Registration successfull", $user->select(['email','api_token','phone_number'])->get(),201);
     
        } catch (\Throwable $throwable) {
         Log::warning("Registration Error", [
-            "" => $throwable
+            "error" => $throwable
         ]);
        }
 
@@ -70,20 +71,17 @@ class AuthApiController extends Controller
             ]);
     
             if($validation->fails()){
-                Log::warning("Validation error");
                 return ResponseHelper::errorResponse("Validation Error",$validation->errors());
             }
 
             $user = UserService::getUser($request->email); 
             if(!Hash::check($request->passcode ?? $request->password, $user->password)) {
-                Log::warning("Invalid credentials");
                 return ResponseHelper::errorResponse("Invalid credentials");
             }
             
             if($user->email_verified_at == null) {
-                Log::warning("user not verified");
 
-                UserVerificationJob::dispatch($user);
+                // UserVerificationJob::dispatch($user);
 
                 return ResponseHelper::errorResponse("User not verifed",$user);
             }
@@ -297,5 +295,62 @@ class AuthApiController extends Controller
             }
 
             return ResponseHelper::errorResponse("Unable to reset password");
+    }
+
+    public function getProfile() 
+    {
+        $user = auth('sanctum')->user();
+
+        return ResponseHelper::successResponse("User Profile Retrieved", [
+            "full_name" => $user->full_name ?? '',
+            "phone_number" => $user->phone_number ?? '',
+            "location" => $user->location ?? ''
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = auth('sanctum')->user;
+
+            $validation = Validator::make($request->all(), [
+                 "full_name" => "required|nullable|string",
+                 "phone_number" => "nullable|string|unique:users,phone_number|regex:/0[7-9][0-1]\d{8}/",
+                 "location" => "nullable|string",
+             ]);
+     
+             if($validation->fails()){
+                 return ResponseHelper::errorResponse("Validation Error",$validation->errors());
+             }
+    
+             $data = $request->all();
+    
+             $user->update($data);
+    
+             $user->save();
+    
+             return ResponseHelper::successResponse("OTP sent successfully");
+    
+        } catch(\Throwable $throwable) {
+            Log::warning("Update Profile Error", [
+                "" => $throwable
+            ]);
+
+            return ResponseHelper::errorResponse("Unable to update profile");
+
+        }
+      
+    }
+
+    public function getNotifications()
+    {
+        $user = auth('sanctum')->user;
+        Notification::where("user_id", $user->id);
+    }
+
+    public function updateNotification() 
+    {
+        $user = auth('sanctum')->user;
+
     }
 }

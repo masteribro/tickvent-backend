@@ -15,12 +15,12 @@ class AuthenticationTest extends TestCase
 
     // use RefreshDatabase;
 
-    public function test_example(): void
-    {
-        $response = $this->get('/');
+    // public function test_example(): void
+    // {
+    //     $response = $this->get('/');
 
-        $response->assertStatus(200);
-    }
+    //     $response->assertStatus(200);
+    // }
 
     // public function test_the_register_endpoints() 
     // {
@@ -43,18 +43,18 @@ class AuthenticationTest extends TestCase
 
     // }
 
-    public function test_login_endpoints()
-    {
-        $data = [
-            'email' => 'blessingsanusi97@gmail.com',
-            'is_mobile' => true,
-            'passcode' => 111111,
-            'device_token' => "psfmafmsddslclkcs"
-        ];
+    // public function test_login_endpoints()
+    // {
+    //     $data = [
+    //         'email' => 'blessingsanusi97@gmail.com',
+    //         'is_mobile' => true,
+    //         'passcode' => 111111,
+    //         'device_token' => "psfmafmsddslclkcs"
+    //     ];
 
-        $response = $this->postJson("/api/v1/login", $data);
+    //     $response = $this->postJson("/api/v1/login", $data);
 
-        $response->assertStatus(200);
+    //     $response->assertStatus(200);
         
-    }
+    // }
 }

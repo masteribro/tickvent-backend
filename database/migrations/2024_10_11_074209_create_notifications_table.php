@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Event;
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,10 +12,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_images', function (Blueprint $table) {
+        Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Event::class, 'event_id');
-            $table->longText('image');
+            $table->foreignIdFor(User::class,'user_id');
+            $table->string('channel')->enum(['sms', 'email']);
+            $table->string('type');
+            $table->boolean('value')->default(false);
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('event_images');
+        Schema::dropIfExists('notifications');
     }
 };

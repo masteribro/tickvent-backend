@@ -38,6 +38,8 @@ class EventApiController extends Controller
                 $events = $events->whereIn("id", $event_tags);
             }
 
+            $date =  Carbon::parse($date)->format('Y-m-d');
+
             if($date) {
                 $events = $events->orWhere('start_date', $date);
             }
@@ -45,9 +47,8 @@ class EventApiController extends Controller
             if($slug) {
                 $events = $events->orWhere('slug', $slug);
             }
-            
 
-            return ResponseHelper::successResponse("Message",$events->get());
+            return ResponseHelper::successResponse("Events retrived successfully",$events->get());
 
         } catch(\Throwable $throwable) {
             Log::warning("Getting Events Error",[
@@ -98,6 +99,7 @@ class EventApiController extends Controller
                 ]);
 
                 if($validator->fails()) {
+                    Log::warning($validator->errors());
                     return ResponseHelper::errorResponse("Validation Error", $validator->errors());
                 }
 
@@ -197,9 +199,9 @@ class EventApiController extends Controller
 
             if($event) {
                 return ResponseHelper::successResponse("Event retrieved successfully", $event);
-            } else {
-                return ResponseHelper::errorResponse("Event not found");
-            }
+            } 
+            return ResponseHelper::errorResponse("Event not found");
+
         } catch (\Throwable $throwable) {
             Log::warning("Show specific events", [
                 "get event error" => $throwable
@@ -262,4 +264,6 @@ class EventApiController extends Controller
     {
         
     }
+
+    
 }
