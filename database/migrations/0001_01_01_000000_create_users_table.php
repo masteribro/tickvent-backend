@@ -21,10 +21,13 @@ return new class extends Migration
             $table->longText('api_test_token')->nullable();
             $table->longText('profile_img')->nullable();
             $table->longText('device_token')->nullable();
+            
             $table->longText('address')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('phone_verified_at')->nullable();
             $table->timestamp('password_reset_time')->nullable();
+            
+            $table->
             $table->rememberToken();
             $table->timestamps();
         });

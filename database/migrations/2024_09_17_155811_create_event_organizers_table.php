@@ -16,8 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->longText('organizer_info');
             $table->longText('image')->nullable();
-            $table->string("email", 255)->unigue()->nullable();
-            $table->json('phone_numbers')->nullable();
             $table->timestamps();
         });
     }
