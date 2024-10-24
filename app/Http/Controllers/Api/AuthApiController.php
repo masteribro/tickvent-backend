@@ -344,8 +344,23 @@ class AuthApiController extends Controller
 
     public function getNotifications()
     {
-        $user = auth('sanctum')->user;
-        Notification::where("user_id", $user->id);
+        try {
+            $user = auth('sanctum')->user;
+        
+            $email_settings = Notification::where("user_id", $user->id)->where("channel", "email")->get();
+            $sms_settings = Notification::where("user_id", $user->id)->where("channel", "sms")->get();
+
+            return ResponseHelper::successResponse("Notification Settings Retrieved",[
+                "email" => $email_settings,
+                "sms" => $email_settings
+            ]);
+
+        } catch(\Throwable $throwable) {
+            Log::warning("Error in getting notification", [
+                "" => $throwable
+            ]);
+        }
+
     }
 
     public function updateNotification() 
