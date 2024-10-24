@@ -7,6 +7,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\EventOrganizer;
 use App\Services\EventImageService;
 use App\Services\ReminderService;
 use App\Services\TagsService;
@@ -116,18 +117,47 @@ class EventApiController extends Controller
      */
     public function addOrganizer(Request $request)
     {
-        $validator = \Validator::make($request->all(),[
-            'event_id' => 'required|exists:events,id',
-            'name' => "required|string",
-            'organizer_info' => "required|string",
-            'email' => "nullable|email",
-            'phone_number' => "nullable|array",
-            'phone_number.*' => "required|string|regex:/0[7-9][0-1]\d{8}/"
-        ]);
+        try {
+            $validator = \Validator::make($request->all(),[
+                'event_id' => 'required|exists:events,id',
+                'name' => ["required","string"],
+                'organizer_info' => "nullable|string",
+                'email' => "nullable|email",
+                'phone_number' => "nullable|array",
+                'phone_number.*' => "required|string|regex:/0[7-9][0-1]\d{8}/"
+            ]);
+    
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+    
+            $data = $request->all();
+    
+            $organizer = EventOrganizer::updateOrCreate([
+                "name" => strtolower($data["name"]),
+            ],[
+                "organizer_info" => $data["organizer_info"],
+                "email" => $data["email"] ?? null,
+                "phone_number" => json_encode($data["phone_number"] ?? null),
+            ]);
+    
+            $event = Event::find($data["event_id"]);
+    
+            $event->update([
+                "organizer_id" => $organizer->id
+            ]);
 
-        if($validator->fails()) {
-            return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            return ResponseHelper::successResponse("Organizer added successfully");
+
+        } catch(\Throwable $throwable) {
+            Log::warning("Adding Organizer info", [
+                "error" => $throwable
+            ]);
         }
+
+        return ResponseHelper::errorResponse("Unable to add organizer");
+
+
     }
 
     /**

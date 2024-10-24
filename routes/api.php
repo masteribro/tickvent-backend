@@ -19,6 +19,7 @@ Route::group(['prefix'=>'v1'],function() {
 
         Route::group(["prefix" => "events"], function() {
             Route::post('/create', [EventApiController::class, 'createEvent']);
+            Route::post('/add-organizer', [EventApiController::class, 'addOrganizer']);
         });
     });
 
