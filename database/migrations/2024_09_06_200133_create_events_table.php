@@ -14,16 +14,19 @@ return new class extends Migration
     {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
+            $table->foreignIdFor(User::class, 'user_id');
             $table->string('name', 255);
             $table->longText("description")->nullable();
-            // $table->longText("event_images")->nullable(); I will create and event images and video model 
             $table->longText("slug")->nullable();
             $table->text("location")->nullable();
             $table->text("streaming_url")->nullable();
+
             $table->date("start_date");
             $table->date("end_date")->nullable();
             $table->time("start_time");
             $table->time("end_time")->nullable();
+
+            $table->boolean("is_complete")->default(false)->nullable();
             $table->enum("type", ['physical','virtual', 'hybrid'])->default('physical');
             $table->string('organizer_id')->nullable();
             $table->timestamps();
