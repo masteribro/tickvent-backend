@@ -26,6 +26,7 @@ return new class extends Migration
             $table->longText('address')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('phone_verified_at')->nullable();
+            $table->timestamp('password_reset_time')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

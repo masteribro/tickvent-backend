@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Log;
                 $data = [
                     'title' => "OTP request",
                     'otp' => $otp->otp,
+                    "body" => "Please find your one time password " . $otp->otp,
                     'notification_type' => $otp_for !== 'verify_phone' ? "email" : 'sms'
                 ];
                 // notification will be sent
@@ -46,7 +47,7 @@ use Illuminate\Support\Facades\Log;
             $otp = Otp::where("otp", $otp)->first();
             if($otp == null) {
                 return [
-                    'status' => "error", 
+                    'status' => false, 
                     'message' => "Invalid OTP"
                 ];
             }
