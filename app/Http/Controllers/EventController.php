@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class EventController extends Controller
 {
@@ -18,9 +20,35 @@ class EventController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        try {
+                $auth = auth()->user_err;
+                $validator = \Validator::make($request->all(),[
+                    "name" => "required|string",
+                    "description" => "sometimes|nullable|string",
+                    "start_date" => "required|date",
+                    "end_date" => "sometimes|date",
+                    "start_time" => "required",
+                    "type" => "required|in:physical,hybrid,virtual",
+                    "reminders" => "required|string",
+                    "tags" => "required|array",
+                    "tags.*" => "required|string",
+                    "images" => "nullable|array",
+                    "images.*" => "mimes:jpeg,png,jpg,gif,mp4,mkv,avi,webm|max:10240"
+                ]);
+
+                if($validator->fails()) {
+                    return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+                }
+
+            } catch(\Throwable $throwable) {
+                Log::warning("Creating Events Error",[
+                    "" => $throwable
+                ]);
+            }
+        
+        return ResponseHelper::errorResponse("Unable to create event");
     }
 
     /**

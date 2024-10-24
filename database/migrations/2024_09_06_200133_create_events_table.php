@@ -20,7 +20,6 @@ return new class extends Migration
             $table->longText("slug")->nullable();
             $table->text("location")->nullable();
             $table->text("streaming_url")->nullable();
-            $table->text("streaming_url")->nullable();
             $table->date("start_date");
             $table->date("end_date")->nullable();
             $table->time("start_time");
