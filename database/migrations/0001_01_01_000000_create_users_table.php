@@ -21,8 +21,11 @@ return new class extends Migration
             $table->longText('api_test_token')->nullable();
             $table->longText('profile_img')->nullable();
             $table->longText('device_token')->nullable();
+
+            $table->string('organizer_name')->nullable();
+            $table->longText('organizer_info')->nullable();
             
-            $table->longText('address')->nullable();
+            $table->longText('location')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('phone_verified_at')->nullable();
             $table->timestamp('password_reset_time')->nullable();
@@ -31,7 +34,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
-
+        
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

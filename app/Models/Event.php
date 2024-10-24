@@ -32,4 +32,9 @@ class Event extends Model
     {
         return EventOrganizer::where("id", $this->organizer_id)->first();
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

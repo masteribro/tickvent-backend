@@ -25,6 +25,8 @@ class EventApiController extends Controller
     {
         // comming  back to you 
         try {
+
+            $search = 
             
             $tags = $request->tags ?? [];
             $date = $request->date ?? "";
@@ -149,39 +151,24 @@ class EventApiController extends Controller
     public function addOrganizer(Request $request)
     {
         try {
+            $user = auth('sanctum')->user();
+
             $validator = \Validator::make($request->all(),[
-                'event_id' => 'required|exists:events,id',
-                'name' => ["required","string"],
-                'organizer_info' => "nullable|string",
-                'email' => "nullable|email",
-                'phone_number' => "nullable|array",
-                'phone_number.*' => "required|string|regex:/0[7-9][0-1]\d{8}/"
+                'organizer_name' => ["required","string"],
+                'organizer_info' => ["required","string"],
+                "organizer_img" => ["required|string"] 
             ]);
-    
+            
+            $user->update($request->all());
+
             if($validator->fails()) {
                 return ResponseHelper::errorResponse("Validation Error", $validator->errors());
             }
-    
-            $data = $request->all();
-    
-            $organizer = EventOrganizer::updateOrCreate([
-                "name" => strtolower($data["name"]),
-            ],[
-                "organizer_info" => $data["organizer_info"],
-                "email" => $data["email"] ?? null,
-                "phone_number" => json_encode($data["phone_number"] ?? null),
-            ]);
-    
-            $event = Event::find($data["event_id"]);
-    
-            $event->update([
-                "organizer_id" => $organizer->id
-            ]);
 
-            return ResponseHelper::successResponse("Organizer added successfully");
+            return ResponseHelper::successResponse("Organizer info updated successfully");
 
         } catch(\Throwable $throwable) {
-            Log::warning("Adding Organizer info", [
+            Log::warning("updating Organizer info", [
                 "error" => $throwable
             ]);
         }
@@ -195,10 +182,13 @@ class EventApiController extends Controller
     public function getEvent(Request $request, $idOrSlug)
     {
         try {
-            $event = Event::where("slug", $idOrSlug)->orWhere('id', $idOrSlug)->first();
+            $event = Event::with("tickets")->where("slug", $idOrSlug)->orWhere('id', $idOrSlug)->first();
 
             if($event) {
-                return ResponseHelper::successResponse("Event retrieved successfully", $event);
+                return ResponseHelper::successResponse("Event retrieved successfully", [
+                "event" => $event,
+                "organizer" => $event->user->select("organizer_name", "organizer_info")->get()
+            ]);
             } 
             return ResponseHelper::errorResponse("Event not found");
 
@@ -222,6 +212,7 @@ class EventApiController extends Controller
                 'tickets' => 'required_if:is_free,false|array',
                 'tickets.*.type' => 'required|string',
                 'tickets.*.price' => 'required|decimal:2|string',
+                'tickets.*.persons_per_section' => 'required|decimal:2|string',
             ]);
 
             if($validator->fails()) {
@@ -240,6 +231,7 @@ class EventApiController extends Controller
                         'type' => $ticket["type"],
                         'slug' => Str::slug($ticket["type"]),
                         'price' => $ticket["price"],
+                        'persons_per_section' => $ticket["persons_per_section"]
                     ]);
                     Log::warning("Tickets created");
                 });

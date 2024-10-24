@@ -19,13 +19,13 @@ Route::group(['prefix'=>'v1'],function() {
 
         Route::group(['prefix' => 'settings'], function() {
             Route::get("/profile", [AuthApiController::class, 'getProfile']);
-            Route::post("/profile", [AuthApiController::class, 'updateProfile']);
+            Route::put("/profile", [AuthApiController::class, 'updateProfile']);
 
             Route::get("/banks", [AuthApiController::class, 'getBanks']);
             Route::put("/banks/{bank_id}", [AuthApiController::class, 'updateBankAccount']);
-            Route::post("/banks/{bank_id}", [AuthApiController::class, 'createBankAccount']);
+            Route::post("/add-banks", [AuthApiController::class, 'createBankAccount']);
             
-            Route::get("/notifications", [AuthApiController::class, "getNotifications"]);
+            Route::get("/notifications", [AuthApiController::class, "getNotificationsSettings"]);
             Route::post("/notifications", [AuthApiController::class, "updatetNotifications"]);
         });
 
@@ -36,6 +36,7 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post('/create', [EventApiController::class, 'createEvent']);
             Route::post('/add-organizer', [EventApiController::class, 'addOrganizer']);
             Route::post('/add-tickets', [EventApiController::class, 'addTickets']);
+            Route::post('/ticket/{$event_id}', [EventApiController::class, 'addTickets']);
 
             Route::get("/featured", [EventApiController::class, 'getFeaturedEvents']); // getting all featured
             Route::get("/upcoming", [EventApiController::class, 'getFeaturedEvents']); // getting all upcoming
@@ -44,7 +45,7 @@ Route::group(['prefix'=>'v1'],function() {
         });
 
         Route::get("/booked-events",[EventApiController::class,'getBookedEvents']);
-        Route::get("/booked-events/{{booked_event_id}}", [EventApiController::class, "getBookedEvent"]);
+        Route::get("/booked-events/{booked_event_id}", [EventApiController::class, "getBookedEvent"]);
             // Manage Events Endppoints
         Route::group(["prefix" => "manage-event"], static function() {
             /**

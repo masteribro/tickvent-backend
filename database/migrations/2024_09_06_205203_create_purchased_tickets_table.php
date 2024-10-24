@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Event;
+use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,13 +14,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tickets', function (Blueprint $table) {
+        Schema::create('purchased_tickets', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Event::class, 'event_id');
-            $table->string('type')->default('Regular');
-            $table->string("slug")->nullable();
-            $table->decimal("price", 16, 2);
-            $table->integer("persons_person_section");
+            $table->foreignIdFor(User::class, "user_id");
+            $table->foreignIdFor(Ticket::class, "ticket_id");
+            $table->foreignIdFor(Event::class, "event_id");
+            $table->integer("invitations");
+            $table->integer(Event::class, "event_id");
             $table->timestamps();
         });
     }
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tickets');
+        Schema::dropIfExists('purchased_tickets');
     }
 };

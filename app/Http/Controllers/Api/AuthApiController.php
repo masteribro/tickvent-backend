@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Jobs\UserVerificationJob;
+use App\Models\BankAccount;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\OtpService;
 use App\Services\UserService;
 use Closure;
@@ -79,12 +81,12 @@ class AuthApiController extends Controller
                 return ResponseHelper::errorResponse("Invalid credentials");
             }
             
-            if($user->email_verified_at == null) {
+            // if(!$user->email_verified_at) {
 
-                // UserVerificationJob::dispatch($user);
+            //     UserVerificationJob::dispatch($user);
 
-                return ResponseHelper::errorResponse("User not verifed",$user);
-            }
+            //     return ResponseHelper::errorResponse("User not verifed",$user);
+            // }
 
             // add device token implementation
 
@@ -140,7 +142,7 @@ class AuthApiController extends Controller
             }
             
             $otp = $request->otp;
-            $res = OtpService::verifyOtp($otp, $user, 'password_reset');
+            $res = OtpService::verifyOtp($otp, $user, 'change_password');
 
             if($res['status']) {
                 $user->update(
@@ -227,8 +229,8 @@ class AuthApiController extends Controller
         try {
 
             $validator = \Validator::make(request()->all(), [
-                'otp_for' => "required|in:forget_password,verify_email,verify_phone,password_reset",
-                'email' => "required_if:otp_for,forget_password,verify_email,password_reset|email|exists:users,email",
+                'otp_for' => "required|in:forget_password,change_password,verify_email,verify_phone,password_reset",
+                'email' => "required_if:otp_for,change_password,forget_password,verify_email,password_reset|email|exists:users,email",
                 "phone" => 'required_if:otp_for,verify_phone|string|regex:/0[7-9][0-1]\d{8}/|exists:users,phone_number'
             ]);
 
@@ -265,6 +267,7 @@ class AuthApiController extends Controller
     {
         try {
             $validator = \Validator::make(request()->all(), [
+                "otp" => "required|digits:6",
                 'email' => "required|exists:users,email",
                 "is_mobile" => "required|boolean",
                 "passcode" => "required_if:is_mobile,true|digits:6|confirmed",
@@ -284,9 +287,22 @@ class AuthApiController extends Controller
                     return ResponseHelper::errorResponse("User not found");
                 }
 
-                $user->update(['password' => Hash::make($password)]);
-
-                return ResponseHelper::successResponse("Password reset successfully");
+                $otp = $request->otp;
+                $res = OtpService::verifyOtp($otp, $user, 'password_reset');
+    
+                if($res['status']) {
+                    $user->update(
+                        [
+                           "password" => Hash::make($request->password ?? $request->passcode),
+                           "password_reset_time" => now()->format("Y-m-d H:i:s")
+                        ]
+                    );
+                  
+                    return ResponseHelper::successResponse($request->is_mobile ? 'Passcode changed successfully' : 'Password changed successfully');
+    
+                } else {
+                    return ResponseHelper::errorResponse($res["message"]);
+                }
                 
             } catch (\Exception $e) {
                 Log::warning("change password error",[ 
@@ -303,6 +319,7 @@ class AuthApiController extends Controller
 
         return ResponseHelper::successResponse("User Profile Retrieved", [
             "full_name" => $user->full_name ?? '',
+            "email" => $user->email,
             "phone_number" => $user->phone_number ?? '',
             "location" => $user->location ?? ''
         ]);
@@ -311,25 +328,23 @@ class AuthApiController extends Controller
     public function updateProfile(Request $request)
     {
         try {
-            $user = auth('sanctum')->user;
+            $user = auth('sanctum')->user();
 
             $validation = Validator::make($request->all(), [
                  "full_name" => "required|nullable|string",
-                 "phone_number" => "nullable|string|unique:users,phone_number|regex:/0[7-9][0-1]\d{8}/",
+                 "phone_number" => ["nullable" ,"string","unique:users,phone_number," . $user->id,"regex:/0[7-9][0-1]\d{8}/"],
                  "location" => "nullable|string",
              ]);
      
              if($validation->fails()){
                  return ResponseHelper::errorResponse("Validation Error",$validation->errors());
-             }
+            }
     
              $data = $request->all();
     
              $user->update($data);
     
-             $user->save();
-    
-             return ResponseHelper::successResponse("OTP sent successfully");
+             return ResponseHelper::successResponse("Profile update successfully");
     
         } catch(\Throwable $throwable) {
             Log::warning("Update Profile Error", [
@@ -342,30 +357,108 @@ class AuthApiController extends Controller
       
     }
 
-    public function getNotifications()
+    public function getNotificationsSettings()
     {
         try {
             $user = auth('sanctum')->user;
         
-            $email_settings = Notification::where("user_id", $user->id)->where("channel", "email")->get();
-            $sms_settings = Notification::where("user_id", $user->id)->where("channel", "sms")->get();
+            $data = (new NotificationService())->getNotifications($user);
 
-            return ResponseHelper::successResponse("Notification Settings Retrieved",[
-                "email" => $email_settings,
-                "sms" => $email_settings
-            ]);
+            return ResponseHelper::successResponse("Notification Settings Retrieved",$data);
 
         } catch(\Throwable $throwable) {
             Log::warning("Error in getting notification", [
                 "" => $throwable
             ]);
+            return ResponseHelper::errorResponse("Unable to get notification settings");
         }
 
     }
 
-    public function updateNotification() 
+    public function updateNotificationSettings() 
     {
-        $user = auth('sanctum')->user;
+        try {
+            $user = auth('sanctum')->user;
 
+            $request = request();
+
+            $validation = Validator::make($request->all(),[
+                "notifications" => "required|array",
+                "notifications.*.channel" => "required|string|in:email,sms",
+                "notifications.*.type" => "required|in:ticket-gift,event-invite,new-event,happening-around,login",
+                "notifications.*.value" => "required|boolean"
+            ]);
+
+            if($validation->fails()){
+
+            return ResponseHelper::errorResponse("Validation Error",$validation->errors());
+        }
+
+        $notifications = collect($request->notifications)->map(function ($item) use($user) {
+                return $item["user_id"] = $user->id;
+        } );
+
+        Notification::upsert(
+            $notifications,
+        [
+            "user_id", "channel", "type"
+        ], [
+            'value'
+        ]);
+                
+        return ResponseHelper::successResponse("Notification updated successfull");
+
+        } catch(\Throwable $throwable){
+            Log::warning("Error in setting notification",[
+                "error" => $throwable
+            ]);
+        }
+        return ResponseHelper::errorResponse("Unable to update notification");
+        
+    }
+
+    public function getBanks()
+    {
+        try {
+            $user = auth('sanctum')->user();
+
+            $banks = $user->banks;
+            return ResponseHelper::successResponse("Banks retrieve successfully",$banks);
+        } catch(\Throwable $th) {
+            Log::warning("Error in geting banks", [
+                "error" => $th
+            ]);
+        }
+        
+        return ResponseHelper::errorResponse("Unable to get banks");
+    }
+
+    public function addBank() 
+    {
+        // you will need to add authentication to this
+        $user = auth('sanctum')->user();
+
+        $request = request();
+        $validation = Validator::make($request->all(), [
+            "bank_code" => "required|string",
+            "account_name" => "required|string",
+            "account_number" => "required|string|regex:/[0-9]{10}/"
+            ]);
+    
+        if($validation->fails()){
+            return ResponseHelper::errorResponse("Validation Error",$validation->errors());
+        }
+
+        $data["user_id"] = $user->id;
+        $data['bank_name'] = "These where you get the bank_name";
+
+        BankAccount::create($data);
+
+    }
+
+    public function getBanksCodes()
+    {
+        // Talk to Paystack
+        // PaystackService::getBankCodes
     }
 }

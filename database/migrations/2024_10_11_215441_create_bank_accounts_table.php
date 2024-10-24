@@ -15,10 +15,10 @@ return new class extends Migration
         Schema::create('bank_accounts', function (Blueprint $table) {
             $table->id();
             $table->string("bank_code");
-            $table->string("bank_name");
+            $table->string("bank_name")->nullable();
             $table->string("account_number");
             $table->string("account_name");
-            $table->string("split_code");
+            $table->string("split_code")->nullable();
             $table->foreignIdFor(User::class, "user_id");
             $table->boolean("default")->default(true);
             $table->timestamps();
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bank_accouts');
+        Schema::dropIfExists('bank_accounts');
     }
 };
