@@ -16,8 +16,16 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('phone_number')->unique();
             $table->longText('password');
+            $table->longText('api_token')->nullable();
+            $table->boolean("is_mobile")->default(0);
+            $table->longText('api_test_token')->nullable();
+            $table->longText('profile_img')->nullable();
+            $table->longText('device_token')->nullable();
+            $table->longText('address')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->timestamp('phone_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
