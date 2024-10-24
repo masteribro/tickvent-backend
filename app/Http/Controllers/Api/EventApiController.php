@@ -46,7 +46,8 @@ class EventApiController extends Controller
                 $events = $events->orWhere('slug', $slug);
             }
             
-            $events->get();
+
+            return ResponseHelper::successResponse("Message",$events->get());
 
         } catch(\Throwable $throwable) {
             Log::warning("Getting Events Error",[
