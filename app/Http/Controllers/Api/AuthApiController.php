@@ -47,7 +47,7 @@ class AuthApiController extends Controller
 
         UserVerificationJob::dispatch($user);
 
-        return ResponseHelper::successResponse("Registration successfull", $user->select(['first_name', 'last_name','email','api_token','phone_number'])->get(),200);
+        return ResponseHelper::successResponse("Registration successfull", $user->select(['first_name', 'last_name','email','api_token','phone_number'])->get(),201);
     
        } catch (\Throwable $throwable) {
         Log::warning("Registration Error", [
