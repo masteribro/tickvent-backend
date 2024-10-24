@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\EventApiController;
+use App\Http\Controllers\Api\TicketApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -62,7 +63,7 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post("/confectionary", [EventApiController::class, "addConfectionary"]);
 
             // verify ticket
-            Route::get("/verify-ticket/{ticket_id}/{invite?}", [EventApiController::class, "verifyTicket"]);
+            Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]);
         });
 
         Route::group(["prefix" => "notification"], static function() {

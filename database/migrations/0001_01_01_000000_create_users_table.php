@@ -27,7 +27,7 @@ return new class extends Migration
             $table->timestamp('phone_verified_at')->nullable();
             $table->timestamp('password_reset_time')->nullable();
             
-            $table->
+            $table->longText('profile_img_url')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
