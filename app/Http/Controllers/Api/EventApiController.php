@@ -10,6 +10,8 @@ use App\Http\Controllers\Controller;
 use App\Services\EventImageService;
 use App\Services\ReminderService;
 use App\Services\TagsService;
+use Carbon\Carbon;
+use Closure;
 use Illuminate\Support\Str;
 
 class EventApiController extends Controller
@@ -33,12 +35,17 @@ class EventApiController extends Controller
                 $validator = \Validator::make($request->all(),[
                     "name" => "required|string",
                     "description" => "sometimes|nullable|string",
-                    "start_date" => "required|date_format:Y-m-d", // There is a validation of date
+                    "start_date" => ["required","date_format:Y-m-d", function ($attribute, $value, Closure $fail){
+                        if($value < Carbon::now()->format('Y-m-d')) {
+                            $fail("Date must be a future date");
+                        }
+                    }], // There is a validation of date
                     "end_date" => "sometimes|date_format:Y-m-d|after_or_equal:start_date",
-                    "start_time" => ['required', 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/'],
-                    "end_time" => ["nullable", 'regex:/^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/', function($attribute, $value, Closure $fail) use ($request) {
+                    "start_time" => ['required', 'date_format:H:i:s'],
+                    "end_time" => ["nullable", 'date_format:H:i:s', function($attribute, $value, Closure $fail) use ($request) {
                         if($request->end_date == $request->start_date) {
-                            if($request->start_time < $value) {
+                            if($request->start_time > $value) {
+                               Log::warning($request->start_time);
                                 $fail("Invalid time");
                             }
                         }
@@ -46,35 +53,52 @@ class EventApiController extends Controller
                     "type" => "required|in:physical,hybrid,virtual",
                     "location" => "required_if:type,physical,hybrid",
                     "reminders" => "sometimes|array",
-                    "reminders.*" => "required_if:reminder,array|string",
+                    "reminders.*" =>[ "required_if:reminders,array","date_format:Y-m-d" ,"before_or_equal:start_date", function ($attribute, $value, Closure $fail){
+                        if($value < Carbon::now()->format('Y-m-d')) {
+                            $fail("Date must be between today and the date of the event date");
+                        }
+                    } ],
                     "tags" => "nullable|array",
                     "tags.*" => "required|string",
-                    "images" => "required|mimes:jpeg,png,jpg,gif,mp4,mkv,avi",
-                    // "images.*" => "required|mimes:jpeg,png,jpg,gif,mp4,mkv,avi,webm|max:10240"
+                    "images" => "nullable|array",
+                    "images.*" => "required|string"
                 ]);
-
-
-                // $reminders = ReminderService::setReminders($event, $request->reminders);
-                // $tags = TagsService::createTag($event, $request->tags);
-                // $images_or_video = EventImageService::saveImages($event, $request->images);
-
 
                 if($validator->fails()) {
                     return ResponseHelper::errorResponse("Validation Error", $validator->errors());
                 }
 
-                $event = Event::create([
+        
+                
+                $event = Event::firstOrcreate([
                     "user_id" => $user->id,
-                    "name" => $request->name,
-                    "description" => $request->description,
+                    "name" => strtolower($request->name),
+                    "description" => $request->description ?? null,
                     "start_date" => $request->start_date,
                     "end_date" => $request->end_date,
                     "slug" => Str::slug($request->name, '-'),
                     "start_time" => $request->start_time,
+                    "end_time" => $request->endtime,
                     "type" => $request->type,
                     "location" => $request->location,
-
+                ], [
+                    "user_id" => $user->id,
+                    "name" => strtolower($request->name),
+                    "description" => $request->description ?? null,
+                    "start_date" => $request->start_date,
+                    "end_date" => $request->end_date,
+                    "slug" => Str::slug($request->name, '-'),
+                    "start_time" => $request->start_time,
+                    "end_time" => $request->endtime,
+                    "type" => $request->type,
+                    "location" => $request->location,
                 ]);
+
+                $images_or_video = EventImageService::saveImages($event, $request->images ?? []);
+
+                $reminders = ReminderService::setReminders($event, $request->reminders ?? []);
+
+                $tags = TagsService::createTag($event, $request->tags ?? []);
 
                 return ResponseHelper::successResponse("Event created successfully", $event, 201);
 
@@ -92,7 +116,18 @@ class EventApiController extends Controller
      */
     public function addOrganizer(Request $request)
     {
-        //
+        $validator = \Validator::make($request->all(),[
+            'event_id' => 'required|exists:events,id',
+            'name' => "required|string",
+            'organizer_info' => "required|string",
+            'email' => "nullable|email",
+            'phone_number' => "nullable|array",
+            'phone_number.*' => "required|string|regex:/0[7-9][0-1]\d{8}/"
+        ]);
+
+        if($validator->fails()) {
+            return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+        }
     }
 
     /**
