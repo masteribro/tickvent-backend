@@ -13,23 +13,10 @@ class TagsService {
     {
         try {
 
-            foreach($tags as $tag) {
-                EventTag::firstOrCreate([
-                    'event_id' => $event->id,
-                    'name' => $tag,
-                ],[
-                    'event_id' => $event->id,
-                    'name' => $tag
-                ]);
-    
-                Tag::firstOrCreate([
-                    'name' => strtolower($tag)
-                ],[
-                    'name' => strtolower($tag)
-                ]);
-            }
-            
-            Log::warning("Done saving tags");
+           $event->update(
+                [ 'tags' => implode(',', $tags)
+                ]
+           );
 
         } catch (\Throwable $throwable) {
             Log::warning("Tags Error", [

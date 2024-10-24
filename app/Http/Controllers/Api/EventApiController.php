@@ -17,6 +17,7 @@ use App\Services\TagsService;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Support\Str;
+use PhpParser\Node\Expr\FuncCall;
 
 class EventApiController extends Controller
 {
@@ -26,40 +27,60 @@ class EventApiController extends Controller
         // comming  back to you 
         try {
 
-            $search = 
-            
-            $tags = $request->tags ?? [];
-            $date = $request->date ?? "";
-            $slug = $request->slug ?? "";
-            
             $events = Event::where('is_complete', true);
 
-            if(!empty($tags)) {
-                $event_tags = collect(EventTag::whereIn("slug",$tags)->select(['event_id'])->get())->values();
+            $filters = ["featured", "upcoming", "weekend"];
+            $tags = $request->tags;
+            $filter = $request->filter;
 
-                $events = $events->whereIn("id", $event_tags);
-            }
 
-            $date =  Carbon::parse($date)->format('Y-m-d');
+            if(isset($filter)) {
 
-            if($date) {
-                $events = $events->orWhere('start_date', $date);
-            }
+                if(!in_array($filter, $filters)) {
+                    return ResponseHelper::errorResponse("Unknown Filter");
+                }
+                
+                switch ($filter) {
+                    case 'featured': {
+                        $events = $events->where('featured', true);
+                        break;
+                    }
 
-            if($slug) {
-                $events = $events->orWhere('slug', $slug);
+                    case 'upcoming': {
+                        $currentDate = Carbon::now()->format("Y-m-d");
+                        $commingWeeks = Carbon::now()->addWeeks(3)->format('Y-m-d');
+
+                        $events = $events->whereBetween("start_date",[$currentDate, $commingWeeks]);
+
+                        break;
+                    }
+
+                    case 'weekend': {
+                        $weekend[] = Carbon::now()->next(Carbon::FRIDAY)->format('Y-m-d');
+                        $weekend[] = Carbon::now()->next(Carbon::SATURDAY)->format('Y-m-d');
+                        $weekend[] = Carbon::now()->next(Carbon::SUNDAY)->format('Y-m-d');
+
+                        $events = $events->whereIn("start_date", $weekend);
+                        break;
+                    }
+                    
+                    default:
+                        $events = $events;
+                    break;
+                }
+            } else {
+                $events = $events->where("tags", "LIKE" , '%' . $tags . '%');
             }
 
             return ResponseHelper::successResponse("Events retrived successfully",$events->get());
 
-        } catch(\Throwable $throwable) {
+
+    } catch(\Throwable $throwable) {
             Log::warning("Getting Events Error",[
                 "" => $throwable
             ]);
         }
-
         return ResponseHelper::errorResponse("Unable to process event");
-        
     }
 
    
@@ -150,31 +171,7 @@ class EventApiController extends Controller
 
     public function addOrganizer(Request $request)
     {
-        try {
-            $user = auth('sanctum')->user();
-
-            $validator = \Validator::make($request->all(),[
-                'organizer_name' => ["required","string"],
-                'organizer_info' => ["required","string"],
-                "organizer_img" => ["required|string"] 
-            ]);
-            
-            $user->update($request->all());
-
-            if($validator->fails()) {
-                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
-            }
-
-            return ResponseHelper::successResponse("Organizer info updated successfully");
-
-        } catch(\Throwable $throwable) {
-            Log::warning("updating Organizer info", [
-                "error" => $throwable
-            ]);
-        }
-
-        return ResponseHelper::errorResponse("Unable to add organizer");
-
+       
 
     }
 
@@ -257,5 +254,9 @@ class EventApiController extends Controller
         
     }
 
+    public function featuredEvent($id)
+    {
+        return "kdskdk";
+    }
     
 }

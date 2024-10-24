@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('full_name')->nullable();
+            $table->boolean('is_admin')->default(false);
             $table->string('email')->unique();
+            $table->boolean('is_verified')->nullable()->default(false);
             $table->string('phone_number')->nullable()->unique();
-            $table->longText('password');
+            $table->longText('password')->nullable();
             $table->longText('api_token')->nullable();
             $table->longText('api_test_token')->nullable();
             $table->longText('profile_img')->nullable();
@@ -24,6 +26,7 @@ return new class extends Migration
 
             $table->string('organizer_name')->nullable();
             $table->longText('organizer_info')->nullable();
+            $table->longText('organizer_img')->nullable();
             
             $table->longText('location')->nullable();
             $table->timestamp('email_verified_at')->nullable();

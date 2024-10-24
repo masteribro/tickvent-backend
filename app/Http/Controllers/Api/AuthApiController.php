@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\UserVerificationJob;
 use App\Models\BankAccount;
 use App\Models\Notification;
+use App\Models\Otp;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\OtpService;
@@ -20,47 +21,84 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthApiController extends Controller
 {
+    protected $user;
+
+    public function __construct() {
+        $this->user = auth('sanctum')->user();
+    }
+
     public function register(Request $request) 
     {
        try {
+
         $validation = Validator::make($request->all(), [
            // "first_name" => "required|string",
            // "last_name" => "required|string",
-            "email" => "required|email|unique:users,email",
+            "email" => "required|email",
             "is_mobile" => "required|boolean",
             "device_token" => "required_if:is_mobile,true|string",
-            "address" => "nullable|string",
+            // "address" => "nullable|string",
             // "phone_number" => "required|string|unique:users,phone_number|regex:/0[7-9][0-1]\d{8}/",
-            "passcode" => "required_if:is_mobile,true|digits:6|confirmed",
-            "password" => ["required_if:is_mobile,false","confirmed", Password::min(8)->mixedCase()->letters()->symbols()]
+            // "passcode" => "required_if:is_mobile,true|digits:6|confirmed",
+            // "password" => ["required_if:is_mobile,false","confirmed", Password::min(8)->mixedCase()->letters()->symbols()]
         ]);
 
         if($validation->fails()){
             return ResponseHelper::errorResponse("Validation Error",$validation->errors());
         }
-        $data = $request->all();
-        $data['password'] = Hash::make($request->passcode ?? $request->password);
+        $resp = UserService::registerUser(request('email'));
 
-        $user = User::create($data);
+        if($resp["status"]) {
+            return ResponseHelper::successResponse($resp["message"]);
+        } 
 
-        $user->api_token = $user->createToken($user->email)->plainTextToken;
-        $user->api_test_token = $user->createToken($user->email)->plainTextToken;
-
-        $user->save();
-
-        // UserVerificationJob::dispatch($user);
-
-        return ResponseHelper::successResponse("Registration successfull", $user->select(['email','api_token','phone_number'])->get(),201);
+        return ResponseHelper::errorResponse($resp["message"]);
     
        } catch (\Throwable $throwable) {
         Log::warning("Registration Error", [
             "error" => $throwable
         ]);
        }
-
         return ResponseHelper::errorResponse("Unable to create an account, try again later", []);
     }
 
+    public function registerVerification()
+    {
+        try{
+            $validator = Validator::make(request()->all(), [
+                "otp" => "required|digits:6",
+                "email" => "required|exists:users,email"
+            ]);
+    
+            if($validator->fails()){
+                return ResponseHelper::errorResponse("Validation Error",$validator->errors());
+            }
+    
+            $user = UserService::getUser(request('email'));
+
+            $resp = OtpService::verifyOtp(request('otp'), $user, 'registration');
+            if(!$resp["status"]) {
+                $resp = OtpService::sendOtp("registration",$user);
+                if($resp["status"]) return ResponseHelper::errorResponse('Invalid OTP, OTP resent!');
+            }
+            
+            $user->update([
+                "api_token" => $user->createToken($user->email)->plainTextToken,
+                "api_test_token" => $user->createToken($user->email)->plainTextToken,
+                "is_verified" => true
+            ]);
+
+
+            return ResponseHelper::successResponse("User verified",$user,201);
+
+        } catch(\Throwable $throwable) {
+            Log::warning("Error in registration verification", [
+                "error" => $throwable
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to verify email");
+    }
     public function login(Request $request)
     {
         try {
@@ -77,8 +115,15 @@ class AuthApiController extends Controller
             }
 
             $user = UserService::getUser($request->email); 
-            if(!Hash::check($request->passcode ?? $request->password, $user->password)) {
-                return ResponseHelper::errorResponse("Invalid credentials");
+            if(!$user->is_verified) {
+                $resp = OtpService::sendOtp("registration", $user);
+                if(!$resp['status']) {
+                    Log::warning("Unable to send Otp");
+                    return ResponseHelper::errorResponse("Unable to send verificatio code, please try again");
+                }
+                return ResponseHelper::errorResponse("Verify your account, Verification code has been sent to this email");
+            } else if(!Hash::check($request->passcode ?? $request->password, $user->password)) {
+                return ResponseHelper::errorResponse("Invalid credentials, please confirmed or set your password");
             }
             
             // if(!$user->email_verified_at) {
@@ -357,10 +402,53 @@ class AuthApiController extends Controller
       
     }
 
+    public function getOrganizerProfile()
+    {
+        try {
+            return ResponseHelper::successResponse("Organizer information retrieved", UserService::getUserOrganizationInfo($this->user));
+
+        } catch(\Throwable $throwable) {
+            Log::warning("Error in get organizer profile", [
+                "error" => $throwable
+            ]);
+        }
+        return ResponseHelper::errorResponse("Unable to get organizer infomation");
+    }
+
+    public function updateOrganizerProfile(Request $request)
+    {
+        try {
+            $user = auth('sanctum')->user();
+
+            $validation = Validator::make($request->all(), [
+                 "organizer_name" => "required|nullable|string",
+                 "organizer_info" => ["nullable" ,"string"],
+                 "organizer_img" => "nullable|string",
+             ]);
+     
+             if($validation->fails()){
+                 return ResponseHelper::errorResponse("Validation Error",$validation->errors());
+            }
+    
+             $data = $request->all();
+    
+             $user->update($data);
+    
+             return ResponseHelper::successResponse("Organizer Profile updated successfully");
+    
+        } catch(\Throwable $throwable) {
+            Log::warning("Update Organizer Profile Error", [
+                "" => $throwable
+            ]);
+
+            return ResponseHelper::errorResponse("Unable to update profile");
+        }
+      
+    }
     public function getNotificationsSettings()
     {
         try {
-            $user = auth('sanctum')->user;
+            $user = auth('sanctum')->user();
         
             $data = (new NotificationService())->getNotifications($user);
 
@@ -378,7 +466,7 @@ class AuthApiController extends Controller
     public function updateNotificationSettings() 
     {
         try {
-            $user = auth('sanctum')->user;
+            $user = $this->user;
 
             $request = request();
 
@@ -394,19 +482,10 @@ class AuthApiController extends Controller
             return ResponseHelper::errorResponse("Validation Error",$validation->errors());
         }
 
-        $notifications = collect($request->notifications)->map(function ($item) use($user) {
-                return $item["user_id"] = $user->id;
-        } );
-
-        Notification::upsert(
-            $notifications,
-        [
-            "user_id", "channel", "type"
-        ], [
-            'value'
-        ]);
-                
-        return ResponseHelper::successResponse("Notification updated successfull");
+        $resp = (new NotificationService)->updateNotifications($request->notifications, $user);
+            if($resp["status"]) {
+                return ResponseHelper::successResponse("Notification updated successfull");
+            }    
 
         } catch(\Throwable $throwable){
             Log::warning("Error in setting notification",[

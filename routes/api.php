@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\EventApiController;
 use App\Http\Controllers\Api\TicketApiController;
@@ -7,7 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix'=>'v1'],function() {
-    Route::post('/register', [AuthApiController::class, 'register']);
+    Route::post('/register', [AuthApiController::class, 'register']); // endpoint for password
+    Route::post('/register-verification', [AuthApiController::class, 'registerVerification']); // endpoint for password
     Route::post('/login', [AuthApiController::class, 'login']);
     Route::post('/reset-password', [AuthApiController::class, 'resetPassword']);
 
@@ -18,15 +20,22 @@ Route::group(['prefix'=>'v1'],function() {
         Route::post('/change-password', [AuthApiController::class, 'changePassword']);
 
         Route::group(['prefix' => 'settings'], function() {
+            // personal profile
             Route::get("/profile", [AuthApiController::class, 'getProfile']);
             Route::put("/profile", [AuthApiController::class, 'updateProfile']);
 
-            Route::get("/banks", [AuthApiController::class, 'getBanks']);
-            Route::put("/banks/{bank_id}", [AuthApiController::class, 'updateBankAccount']);
-            Route::post("/add-banks", [AuthApiController::class, 'createBankAccount']);
-            
+            // Organization Profile
+            Route::get("/organizer/profile", [AuthApiController::class, 'getOrganizerProfile']);
+            Route::put("/organizer/profile", [AuthApiController::class, 'updateOrganizerProfile']);
+
+            // Banks Details
+            // Route::get("/banks", [AuthApiController::class, 'getBanks']);
+            // Route::put("/banks/{bank_id}", [AuthApiController::class, 'updateBankAccount']);
+            // Route::post("/add-banks", [AuthApiController::class, 'createBankAccount']);
+
+            // Notifications
             Route::get("/notifications", [AuthApiController::class, "getNotificationsSettings"]);
-            Route::post("/notifications", [AuthApiController::class, "updatetNotifications"]);
+            Route::put("/notifications", [AuthApiController::class, "updateNotificationSettings"]);
         });
 
         Route::group(["prefix" => "events"], function() {
@@ -34,47 +43,42 @@ Route::group(['prefix'=>'v1'],function() {
             Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // gettings specific events
 
             Route::post('/create', [EventApiController::class, 'createEvent']);
-            Route::post('/add-organizer', [EventApiController::class, 'addOrganizer']);
-            Route::post('/add-tickets', [EventApiController::class, 'addTickets']);
-            Route::post('/ticket/{$event_id}', [EventApiController::class, 'addTickets']);
-
-            Route::get("/featured", [EventApiController::class, 'getFeaturedEvents']); // getting all featured
-            Route::get("/upcoming", [EventApiController::class, 'getFeaturedEvents']); // getting all upcoming
-            Route::get("/weekend", [EventApiController::class, 'getFeaturedEvents']); // getting all weekend
             
+            // Route::post("/order", [EventApiController::class, ""]);
+            // Route::post("/cart", [EventApiController::class, ""]);
         });
 
-        Route::get("/booked-events",[EventApiController::class,'getBookedEvents']);
-        Route::get("/booked-events/{booked_event_id}", [EventApiController::class, "getBookedEvent"]);
-            // Manage Events Endppoints
-        Route::group(["prefix" => "manage-event"], static function() {
-            /**
-             * An Endpoint add roles, permissions,
-             * An Endpoint to add users to event
-             * An Endpoint to add confectionery
-             * An Endpoint to verify a user for a specific events
-             */
+        // Manage Events Endppoints
+        Route::group(["prefix" => "manage-event", 'middleware' => 'event-owner'], static function() {
 
-            Route::get("/roles", [EventApiController::class, "getBookedEvent"]);
-            Route::get("/permissions", [EventApiController::class, "getPermission"]);
-            Route::get("/confectionary", [EventApiController::class, "getConfectionary"]);
+            Route::get("/roles", [EventApiController::class, "getEventRoles"]);
+            Route::post("/roles", [EventApiController::class, "getEventRoles"]);
 
-            Route::post("/roles", [EventApiController::class, "addRoles"]);
-            Route::post("/permissions", [EventApiController::class, "addPermission"]);
-            Route::post("/confectionary", [EventApiController::class, "addConfectionary"]);
+            Route::get("/permissions", [EventApiController::class, "getEventRolesPermission"]);
+            Route::post("/permissions", [EventApiController::class, "getEventRolesPermission"]);
+
+            Route::get("/confectionary", [EventApiController::class, "getEventConfectionary"]);
+            Route::post("/confectionary", [EventApiController::class, "getEventRolesPermission"]);
+
+            Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
+            Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);
+
+            Route::get("/itinerary", [EventApiController::class, "getItinerary"]);
+            Route::post("/itinerary", [EventApiController::class, "addItinerary"]);
 
             // verify ticket
             Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]);
+            Route::post('/ticket/{$event_id}', [EventApiController::class, 'addTickets']);
         });
 
-        Route::group(["prefix" => "notification"], static function() {
-            Route::get("",[]); // get notifications
-            Route::delete("/{id}",[]); // deleteNotification 
+        // Admin Endpoint
+
+        Route::group(['prefix' => 'admin', ['middleware' => 'admin']], static function () {
+            Route::patch("events/featured/{id?}",[AdminController::class, 'featuredEvent']);
         });
-
-
 
     });
 });
+
 
 // ->middleware('auth:sanctum'); 
