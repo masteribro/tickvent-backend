@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\BankApiController;
 use App\Http\Controllers\Api\EventApiController;
 use App\Http\Controllers\Api\TicketApiController;
 use Illuminate\Http\Request;
@@ -19,6 +20,11 @@ Route::group(['prefix'=>'v1'],function() {
     Route::group(["middleware" => ['auth:sanctum']], function() {
         Route::post('/change-password', [AuthApiController::class, 'changePassword']);
 
+        Route::group(['prefix' => 'banks'], static function () {
+            Route::get("", [BankApiController::class, 'getBanks']);
+            Route::post("/add-bank", [BankApiController::class, 'addBankAccount']);
+        });
+       
         Route::group(['prefix' => 'settings'], function() {
             // personal profile
             Route::get("/profile", [AuthApiController::class, 'getProfile']);
@@ -29,7 +35,6 @@ Route::group(['prefix'=>'v1'],function() {
             Route::put("/organizer/profile", [AuthApiController::class, 'updateOrganizerProfile']);
 
             // Banks Details
-            // Route::get("/banks", [AuthApiController::class, 'getBanks']);
             // Route::put("/banks/{bank_id}", [AuthApiController::class, 'updateBankAccount']);
             // Route::post("/add-banks", [AuthApiController::class, 'createBankAccount']);
 
@@ -67,8 +72,8 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post("/itinerary", [EventApiController::class, "addItinerary"]);
 
             // verify ticket
+            Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
             Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]);
-            Route::post('/ticket/{$event_id}', [EventApiController::class, 'addTickets']);
         });
 
         // Admin Endpoint

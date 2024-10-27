@@ -91,6 +91,7 @@ class EventApiController extends Controller
 
                 $validator = \Validator::make($request->all(),[
                     "name" => "required|string",
+                    "is_free" => "required|boolean",
                     "description" => "sometimes|nullable|string",
                     "start_date" => ["required","date_format:Y-m-d", function ($attribute, $value, Closure $fail){
                         if($value < Carbon::now()->format('Y-m-d')) {
@@ -139,6 +140,7 @@ class EventApiController extends Controller
                     "end_time" => $request->endtime,
                     "type" => $request->type,
                     "location" => $request->location,
+                    "is_free" => $request->is_free
                 ], [
                     "user_id" => $user->id,
                     "name" => strtolower($request->name),
@@ -150,6 +152,7 @@ class EventApiController extends Controller
                     "end_time" => $request->endtime,
                     "type" => $request->type,
                     "location" => $request->location,
+                    "is_free" => $request->is_free
                 ]);
 
                 $images_or_video = EventImageService::saveImages($event, $request->images ?? []);
