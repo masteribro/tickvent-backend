@@ -3,8 +3,10 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\BankApiController;
+use App\Http\Controllers\Api\ConfectionaryApiController;
 use App\Http\Controllers\Api\EventApiController;
 use App\Http\Controllers\Api\TicketApiController;
+use App\Models\Confectionary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,8 +25,9 @@ Route::group(['prefix'=>'v1'],function() {
         Route::group(['prefix' => 'banks'], static function () {
             Route::get("", [BankApiController::class, 'getBanks']);
             Route::post("/add-bank", [BankApiController::class, 'addBankAccount']);
+            Route::get("/accounts", [BankApiController::class, 'getBankAccounts']);
         });
-       
+
         Route::group(['prefix' => 'settings'], function() {
             // personal profile
             Route::get("/profile", [AuthApiController::class, 'getProfile']);
@@ -33,10 +36,6 @@ Route::group(['prefix'=>'v1'],function() {
             // Organization Profile
             Route::get("/organizer/profile", [AuthApiController::class, 'getOrganizerProfile']);
             Route::put("/organizer/profile", [AuthApiController::class, 'updateOrganizerProfile']);
-
-            // Banks Details
-            // Route::put("/banks/{bank_id}", [AuthApiController::class, 'updateBankAccount']);
-            // Route::post("/add-banks", [AuthApiController::class, 'createBankAccount']);
 
             // Notifications
             Route::get("/notifications", [AuthApiController::class, "getNotificationsSettings"]);
@@ -48,7 +47,7 @@ Route::group(['prefix'=>'v1'],function() {
             Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // gettings specific events
 
             Route::post('/create', [EventApiController::class, 'createEvent']);
-            
+
             // Route::post("/order", [EventApiController::class, ""]);
             // Route::post("/cart", [EventApiController::class, ""]);
         });
@@ -62,8 +61,10 @@ Route::group(['prefix'=>'v1'],function() {
             Route::get("/permissions", [EventApiController::class, "getEventRolesPermission"]);
             Route::post("/permissions", [EventApiController::class, "getEventRolesPermission"]);
 
-            Route::get("/confectionary", [EventApiController::class, "getEventConfectionary"]);
-            Route::post("/confectionary", [EventApiController::class, "getEventRolesPermission"]);
+            Route::get("/{event_id}/confectionary", [ConfectionaryApiController::class, "getEventConfectionary"]);
+            Route::post("/{event_id}/confectionary", [ConfectionaryApiController::class, "addEventConfectionary"]);
+            Route::put("/{event_id}/confectionary/{confectionary_id}", [EventApiController::class, "addEventConfectionary"]);
+
 
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
             Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);
@@ -86,4 +87,4 @@ Route::group(['prefix'=>'v1'],function() {
 });
 
 
-// ->middleware('auth:sanctum'); 
+// ->middleware('auth:sanctum');

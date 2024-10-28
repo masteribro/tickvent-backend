@@ -16,6 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Confectionary::class, 'confectionary_id');
             $table->string('name');
+            $table->string('slug');
             $table->decimal("price", 16, 2);
             $table->longText('image_url')->nullable();
             $table->timestamps();

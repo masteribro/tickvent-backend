@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string("account_name");
             $table->string("split_code")->nullable();
             $table->foreignIdFor(User::class, "user_id");
-            $table->boolean("default")->default(true);
+            $table->boolean("default")->default(false);
             $table->timestamps();
         });
     }

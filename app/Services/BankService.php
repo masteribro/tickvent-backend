@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Services;
 
@@ -12,7 +12,7 @@ class BankService {
 
     protected $gateways = ['paystack', 'flutterwave'];
 
-    public function seedBanks($gateway) 
+    public function seedBanks($gateway)
     {
 
         if(!in_array($gateway, $this->gateways)) {
@@ -20,7 +20,7 @@ class BankService {
                 "status" => false,
                 "message" => "Unsupported gateway"
             ];
-        }  
+        }
 
         if($gateway === 'paystack') {
             $resp = (new PaystackService)->getBanks();
@@ -55,7 +55,7 @@ class BankService {
         ];
     }
 
-    public function verifyAccount($account_number, $bank_code) 
+    public function verifyAccount($account_number, $bank_code)
     {
         try{
             if($this->gateways[0] === 'paystack') {
@@ -85,7 +85,7 @@ class BankService {
             if($resp["status"]) {
                 $gateway_resp = $this->addAccountToGateway($resp["data"]["account_number"], $payload['account_name'], $bank->bank_code,10);
                 if($gateway_resp["status"]) {
-                    $acc = $this->createBankAccount($gateway_resp['data']["account_number"], $payload["account_name"], $bank->bank_code, $gateway_resp["data"]['split_code'], $user->id);
+                    $acc = $this->createBankAccount($gateway_resp['data']["account_number"], $gateway_resp["data"]["account_name"], $bank->bank_code, $gateway_resp["data"]['split_code'], $user->id);
                     if($acc) {
                         return [
                             'status' => true,
@@ -117,8 +117,8 @@ class BankService {
             'account_number' => $account_number,
             'bank_code' => $bank_code,
             'user_id' => $user_id,
-            'split_code' => $split_code
         ],[
+            'split_code' => $split_code,
             'account_name' => $account_name,
         ]);
 
@@ -146,6 +146,11 @@ class BankService {
             'status' => false,
             "message" => "Unable to add account to gateway"
         ];
+    }
+
+    public function getBankAccounts($user)
+    {
+        return BankAccount::where("user_id", $user->id)->get();
     }
 }
 

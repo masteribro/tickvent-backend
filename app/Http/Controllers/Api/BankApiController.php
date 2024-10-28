@@ -56,4 +56,23 @@ class BankApiController extends Controller
 
         return ResponseHelper::errorResponse("Unable to add bank account, try again later");
     }
+
+    public function getBankAccounts()
+    {
+
+        try {
+
+            $resp = (new BankService)->getBankAccounts(request()->user());
+
+
+            return ResponseHelper::successResponse("Bank Accounts fetched successfully", $resp);
+
+        } catch(\Throwable $th) {
+            Log::warning("Unable to get bank accounts", [
+                "error" => $th
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to get bank accounts, try again later");
+    }
 }

@@ -21,10 +21,10 @@ use PhpParser\Node\Expr\FuncCall;
 
 class EventApiController extends Controller
 {
-   
+
     public function index(Request $request)
     {
-        // comming  back to you 
+        // comming  back to you
         try {
 
             $events = Event::where('is_complete', true);
@@ -39,7 +39,7 @@ class EventApiController extends Controller
                 if(!in_array($filter, $filters)) {
                     return ResponseHelper::errorResponse("Unknown Filter");
                 }
-                
+
                 switch ($filter) {
                     case 'featured': {
                         $events = $events->where('featured', true);
@@ -63,7 +63,7 @@ class EventApiController extends Controller
                         $events = $events->whereIn("start_date", $weekend);
                         break;
                     }
-                    
+
                     default:
                         $events = $events;
                     break;
@@ -83,7 +83,7 @@ class EventApiController extends Controller
         return ResponseHelper::errorResponse("Unable to process event");
     }
 
-   
+
     public function createEvent(Request $request)
     {
         try {
@@ -123,12 +123,11 @@ class EventApiController extends Controller
                 ]);
 
                 if($validator->fails()) {
-                    Log::warning($validator->errors());
                     return ResponseHelper::errorResponse("Validation Error", $validator->errors());
                 }
 
-        
-                
+
+
                 $event = Event::firstOrcreate([
                     "user_id" => $user->id,
                     "name" => strtolower($request->name),
@@ -168,17 +167,17 @@ class EventApiController extends Controller
                     "" => $throwable
                 ]);
             }
-        
+
         return ResponseHelper::errorResponse("Unable to create event");
     }
 
     public function addOrganizer(Request $request)
     {
-       
+
 
     }
 
-    
+
     public function getEvent(Request $request, $idOrSlug)
     {
         try {
@@ -189,7 +188,7 @@ class EventApiController extends Controller
                 "event" => $event,
                 "organizer" => $event->user->select("organizer_name", "organizer_info")->get()
             ]);
-            } 
+            }
             return ResponseHelper::errorResponse("Event not found");
 
         } catch (\Throwable $throwable) {
@@ -251,15 +250,15 @@ class EventApiController extends Controller
         return ResponseHelper::errorResponse("Unable to add tickets, try again later");
     }
 
-    
+
     public function destroy(Request $request, Event $event)
     {
-        
+
     }
 
     public function featuredEvent($id)
     {
         return "kdskdk";
     }
-    
+
 }

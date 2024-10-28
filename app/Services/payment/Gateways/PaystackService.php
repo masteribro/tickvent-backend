@@ -65,6 +65,7 @@ class PaystackService
         try {
         $resp = Http::withHeaders($this->headers)->get(config('paystack.base_url') . '/bank/resolve?account_number=' . $account_number . '&bank_code=' .$bank_code);
             if($resp->failed()) {
+            Log::warning("verify erorr",["" => $resp->json()]);
                 return [
                     "status" => false,
                     "data" => $resp->json()
@@ -93,9 +94,9 @@ class PaystackService
     {
         try {
             $resp = Http::withHeaders($this->headers)->post(config('paystack.base_url') .'/subaccount', [
-                    "business_name" => $account_name, 
+                    "business_name" => $account_name,
                     "bank_code" => $bank_code,
-                    "account_number" => $account_number, 
+                    "account_number" => $account_number,
                     "percentage_charge" => $charge
             ]);
 
