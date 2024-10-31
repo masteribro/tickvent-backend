@@ -66,6 +66,7 @@ Route::group(['prefix'=>'v1'],function() {
             Route::put("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "updateEventConfectionary"]);
 
             Route::delete("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "deleteEventConfectionary"]);
+            Route::delete("/{event_id}/confectionary/{confectionary_id}/image/{image_id}", [ConfectionaryApiController::class, "deleteEventConfectionaryImage"]);
             Route::delete("/{event_id}/confectionary/{confectionary_id}/attachments/{attachment_id}", [ConfectionaryApiController::class, "deleteEventConfectionaryAttachments"]);
 
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);

@@ -103,6 +103,31 @@ class ConfectionaryApiController extends Controller
 
     public function updateEventConfectionary(Request $request,$event_id, $confectionary_id)
     {
+        try {
+            // I am going to edit price, array of attachement
+            $validator = \Validator::make($request->all(),[
+
+                "confectionary_price" => "required|decimal:2",
+                "confectionary_additions.*.price" => "decimal:2",
+                "confectionary_additions.*.image" => "mimes:jpeg,png,svg",
+                "category" => ["nullable", 'array'],
+                "category.*" => ['string']
+            ]);
+
+            $data = $request->all();
+            $data['event_id'] = $event_id;
+
+            // dd($data);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+
+            $attachment = $request->attachment;
+            $price = $request->price;
+
+        }
         $confectionary = $this->confectionaryService->updateEventConfectionary($event_id, $confectionary_id, $request->all());
         return $confectionary;
     }
