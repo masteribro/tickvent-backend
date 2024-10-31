@@ -18,7 +18,7 @@ class VerifyEventOwnerMiddleware
     {
         $event_id = $request->event_id;
         $event = Event::find($event_id);
-        if($event->user_id !== $request->user()->id) {
+        if(!$event || $event->user_id !== $request->user()->id) {
             return response()->json([
                 "message" => "Unauthorized"
             ]);

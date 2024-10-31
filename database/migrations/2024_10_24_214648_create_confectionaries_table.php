@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignIdFor(Event::class, 'event_id');
             $table->string('name');
             $table->string('slug');
+            $table->longText('category')->nullable();
             $table->decimal("price", 16, 2);
             $table->timestamps();
         });

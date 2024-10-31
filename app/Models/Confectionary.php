@@ -11,17 +11,31 @@ class Confectionary extends Model
 
     protected $guarded = ['id'];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
+
+
     public function attachments()
     {
         return $this->hasMany(ConfectionaryAttachment::class);
     }
 
-    public function setCategoryAttribute($value){
-        return implode(',', $value);
+    public function setCategoryAttribute($value)
+    {
+        $this->attributes['category'] = is_array($value) ? implode(',', $value) : $value;
     }
 
-    public function getCategoryAttribute()
+        public function getCategoryAttribute($value)
     {
-        return explode(',', $this->category);
+        return $value ? explode(',', $value) : [];
     }
+
+
+    public function images()
+    {
+        return $this->hasMany(ConfectionaryImage::class);
+    }
+
 }

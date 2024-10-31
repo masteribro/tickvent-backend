@@ -14,15 +14,20 @@ class Event extends Model
         'id'
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at'
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }
-    
-    public function getNameAttribute($value) 
+
+    public function getNameAttribute($value)
     {
         return Str::title($value);
     }
-    public function getImagesAttribute() 
+    public function getImagesAttribute()
     {
         return EventImage::where("event_id", $this->id)->get();
     }
@@ -37,4 +42,6 @@ class Event extends Model
     {
         return $this->hasMany(Ticket::class);
     }
+
+
 }

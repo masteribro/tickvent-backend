@@ -61,10 +61,12 @@ Route::group(['prefix'=>'v1'],function() {
             Route::get("/permissions", [EventApiController::class, "getEventRolesPermission"]);
             Route::post("/permissions", [EventApiController::class, "getEventRolesPermission"]);
 
-            Route::get("/{event_id}/confectionary", [ConfectionaryApiController::class, "getEventConfectionary"]);
+            Route::get("/{event_id}/confectionary/{allOrId}", [ConfectionaryApiController::class, "getEventConfectionary"]);
             Route::post("/{event_id}/confectionary", [ConfectionaryApiController::class, "addEventConfectionary"]);
-            Route::put("/{event_id}/confectionary/{confectionary_id}", [EventApiController::class, "addEventConfectionary"]);
+            Route::put("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "updateEventConfectionary"]);
 
+            Route::delete("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "deleteEventConfectionary"]);
+            Route::delete("/{event_id}/confectionary/{confectionary_id}/attachments/{attachment_id}", [ConfectionaryApiController::class, "deleteEventConfectionaryAttachments"]);
 
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
             Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);
