@@ -8,6 +8,7 @@ use App\Models\ConfectionaryAttachment;
 use App\Models\ConfectionaryImage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ConfectionaryService
 {
@@ -27,7 +28,7 @@ class ConfectionaryService
                     $additions = $this->addAddtionsToConfectionary($payload["confectionary_additions"], $confectionary);
 
                     if(!$additions) {
-                        Log::warning("Unable to add confectionaries");
+                        Log::warning("Unable to add att$attachments");
                     }
                 }
 
@@ -162,8 +163,10 @@ class ConfectionaryService
 
     }
 
-    public function updateEventConfectionary($event_id, $confectionary_id,$data)
+    public function updateEventConfectionary($event_id, $confectionary_id,$confectionaryPayload, $attachments)
     {
+        try {
+
         $confectionary = $this->getConfectionary($event_id, $confectionary_id);
         if(!$confectionary['status']) {
             return [
@@ -172,11 +175,168 @@ class ConfectionaryService
             ];
         }
 
-        $confectionary['data']->update($data);
+        $updated = $confectionary['data']->update(
+            ['price' => $confectionaryPayload["price"]
+        ]);
+
+        $attachments = $this->updateAttachements($confectionary_id, $attachments);
 
 
-       return $confectionary = $confectionary['data'];
+        $confectionary = Confectionary::with(['attachments','images'])->find($confectionary_id);
 
+            return [
+                'status' => true,
+                "data" => $confectionary
+            ];
+
+        } catch (\Throwable $th) {
+            Log::warning("error response in updatng event confectionary", [
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => true,
+            "data" => 'Error while trying to update confectionary'
+        ];
+
+    }
+
+    public function updateAttachements($confectionary_id, $attachments)
+    {
+        try {
+
+
+            DB::beginTransaction();
+            if(empty($attachments)) {
+                return[
+                    'status' => false
+                ];
+            }
+            Log::warning("I go here");
+            foreach($attachments as $attachment) {
+                $confectionary_attachment = ConfectionaryAttachment::where('confectionary_id', $confectionary_id)->where('slug', str()->slug($attachment['name'], '-'))->orWhere('id', $attachment['id'] ?? null)->first();
+                if($confectionary_attachment) {
+                    $confectionary_attachment->update([
+                        'price' => $attachment['price'],
+                        'image_url' => $this->fileUploadService->uploadFile('confect-attachments',$attachment["image"], $confectionary_attachment["image_url"] ?? null, $attachment["name"])
+                    ]);
+                    Log::warning("log",[
+                        '' => $confectionary_attachment
+                    ]);
+                } else {
+                    ConfectionaryAttachment::create([
+                        'price' => $attachment['price'],
+                        'confectionary_id' => $confectionary_id,
+                        'name' => $attachment['name'],
+                        'slug' => str()->slug($attachment['name'], '-'),
+                        'image_url' => $this->fileUploadService->uploadFile('confect-attachments',$attachment["image"], $attachment["image_url"] ?? null, $attachment["name"])
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'status' => true
+            ];
+
+
+
+        } catch(\Throwable $th) {
+            DB::rollBack();
+            Log::warning("update attachment error",[
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => false
+        ];
+
+    }
+
+    public function deleteConfectionary($confectionaries)
+    {
+        try{
+            $confectionaries = Confectionary::with(['attachments', 'images'])->whereIn('id', $confectionaries)->get();
+
+            collect($confectionaries)->each(function ($confectionary) {
+                collect($confectionary->attachments)->each(function ($attachment) {
+                    (new FileUploadService)->deleteFile($attachment->image_url);
+                });
+
+                collect($confectionary->images)->each(function ($image) {
+                    (new FileUploadService)->deleteFile($image->image_url);
+                });
+
+                $confectionary->delete();
+
+            });
+
+            return [
+                'status' => true
+            ];
+        } catch(\Throwable $th) {
+            Log::warning("error in deleting confectionary",[
+                '' => $th
+            ]);
+        }
+
+        return [
+            'status' => false
+        ];
+    }
+
+    public function deleteConfectionaryAttachment($confectionary_id, $attachments_ids)
+    {
+        try{
+            $attachments = ConfectionaryAttachment::where('confectionary_id', $confectionary_id)->whereIn('id', $attachments_ids)->get();
+
+            Log::warning('',[
+                '' => $attachments
+            ]);
+            collect($attachments)->each(function ($attachment) {
+                (new FileUploadService)->deleteFile($attachment->image_url);
+                $attachment->delete();
+            });
+
+            return [
+                'status' => true
+            ];
+        } catch(\Throwable $th) {
+            Log::warning("error in deleting confectionary attachment",[
+                '' => $th
+            ]);
+        }
+
+        return [
+            'status' => false
+        ];
+    }
+
+    public function deleteEventConfectionaryImages($confectionary_id, $images_ids)
+    {
+        try{
+            $images = ConfectionaryImage::where('confectionary_id', $confectionary_id)->whereIn('id', $images_ids)->get();
+
+            collect($images)->each(function ($image) {
+                (new FileUploadService)->deleteFile($image->image_url);
+                $image->delete();
+            });
+
+            return [
+                'status' => true
+            ];
+        } catch(\Throwable $th) {
+            Log::warning("error in deleting confectionary images",[
+                '' => $th
+            ]);
+        }
+
+        return [
+            'status' => false
+        ];
     }
 
 }

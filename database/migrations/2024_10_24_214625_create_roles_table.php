@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignIdFor(Event::class, 'event_id');
             $table->foreignIdFor(User::class, 'event_owner_id');
             $table->string('name');
+            $table->string('slug');
             $table->longText('description');
             $table->timestamps();
         });

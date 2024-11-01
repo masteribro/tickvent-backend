@@ -63,11 +63,12 @@ Route::group(['prefix'=>'v1'],function() {
 
             Route::get("/{event_id}/confectionary/{allOrId}", [ConfectionaryApiController::class, "getEventConfectionary"]);
             Route::post("/{event_id}/confectionary", [ConfectionaryApiController::class, "addEventConfectionary"]);
-            Route::put("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "updateEventConfectionary"]);
+            Route::post("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "updateEventConfectionary"]);
 
-            Route::delete("/{event_id}/confectionary/{confectionary_id}", [ConfectionaryApiController::class, "deleteEventConfectionary"]);
-            Route::delete("/{event_id}/confectionary/{confectionary_id}/image/{image_id}", [ConfectionaryApiController::class, "deleteEventConfectionaryImage"]);
-            Route::delete("/{event_id}/confectionary/{confectionary_id}/attachments/{attachment_id}", [ConfectionaryApiController::class, "deleteEventConfectionaryAttachments"]);
+            Route::delete("/{event_id}/confectionary", [ConfectionaryApiController::class, "deleteEventConfectionary"]);
+            Route::delete("/{event_id}/confectionary/", [ConfectionaryApiController::class, "deleteEventConfectionary"]);
+            Route::delete("/{event_id}/confectionary/{confectionary_id}/images", [ConfectionaryApiController::class, "deleteEventConfectionaryImage"]);
+            Route::delete("/{event_id}/confectionary/{confectionary_id}/attachments", [ConfectionaryApiController::class, "deleteConfectionaryAttachment"]);
 
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
             Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);

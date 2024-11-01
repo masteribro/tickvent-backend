@@ -106,29 +106,123 @@ class ConfectionaryApiController extends Controller
         try {
             // I am going to edit price, array of attachement
             $validator = \Validator::make($request->all(),[
-
-                "confectionary_price" => "required|decimal:2",
-                "confectionary_additions.*.price" => "decimal:2",
+                "confectionary_price" => "required",
+                "confectionary_images" => "nullable|array",
+                "confectionary_images.*" => "mimes:jpeg,png,svg",
+                "confectionary_addtions" => "nullable|array",
+                "confectionary_additions.*.id" => "nullable|integer",
+                "confectionary_additions.*.price" => "required|integer",
+                "confectionary_additions.*.name" => "required|string",
                 "confectionary_additions.*.image" => "mimes:jpeg,png,svg",
-                "category" => ["nullable", 'array'],
-                "category.*" => ['string']
             ]);
 
-            $data = $request->all();
-            $data['event_id'] = $event_id;
-
-            // dd($data);
 
             if($validator->fails()) {
                 return ResponseHelper::errorResponse("Validation Error", $validator->errors());
             }
 
+            $confectionary_payload = [
+                'price' => $request->confectionary_price,
+                'images' => $request->confectionary_images
+            ];
 
-            $attachment = $request->attachment;
-            $price = $request->price;
+            $attachments_payload = $request->confectionary_additions;
 
+            //dd($attachments_payload);
+
+            $resp = $this->confectionaryService->updateEventConfectionary($event_id, $confectionary_id, $confectionary_payload ,$attachments_payload);
+
+            if($resp['status']) {
+                return ResponseHelper::successResponse("Confectionary updated successfully", $resp['data']);
+            };
+
+        } catch(\Throwable $th) {
+            Log::warning("error in updating", [
+                'error' => $th
+            ]);
         }
-        $confectionary = $this->confectionaryService->updateEventConfectionary($event_id, $confectionary_id, $request->all());
-        return $confectionary;
+
+        return ResponseHelper::errorResponse("Unable to update confectionary ");
+    }
+
+    public function deleteEventConfectionary(Request $request)
+    {
+        try {
+            $validator = \Validator::make($request->all(),[
+                "confectionary_ids" => "required|array",
+                "confectionary_ids.*" => "integer|exists:confectionaries,id",
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+           $resp =  $this->confectionaryService->deleteConfectionary($request->confectionary_ids);
+
+            if($resp["status"]) {
+                return ResponseHelper::successResponse("Confectionries deleted successfully");
+            }
+
+        } catch(\Throwable $th) {
+            Log::warning("error in deleting confectionary",[
+                '' => $th
+            ]);
+        }
+        return ResponseHelper::errorResponse("Unable to delete confectionaries");
+
+    }
+
+    public function  deleteConfectionaryAttachment(Request $request,$event_id, $confectionary_id)
+    {
+        try {
+            $validator = \Validator::make($request->all(),[
+                "attachment_ids" => "required|array",
+                "attachment_ids.*" => "integer|exists:confectionary_attachments,id",
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+           $resp =  $this->confectionaryService->deleteConfectionaryAttachment($confectionary_id, $request->attachment_ids);
+
+            if($resp["status"]) {
+                return ResponseHelper::successResponse("Attachment deleted successfully");
+            }
+
+        } catch(\Throwable $th) {
+            Log::warning("error in deleting confectionary",[
+                '' => $th
+            ]);
+        }
+        return ResponseHelper::errorResponse("Unable to delete confectionary addtions");
+
+    }
+
+    public function  deleteEventConfectionaryImage(Request $request,$event_id, $confectionary_id)
+    {
+        try {
+            $validator = \Validator::make($request->all(),[
+                "images_ids" => "required|array",
+                "images_ids.*" => "integer|exists:confectionary_images,id",
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+           $resp =  $this->confectionaryService->deleteEventConfectionaryImages($confectionary_id, $request->images_ids);
+
+            if($resp["status"]) {
+                return ResponseHelper::successResponse("Confectionary Images deleted successfully");
+            }
+
+        } catch(\Throwable $th) {
+            Log::warning("error in deleting confectionary",[
+                '' => $th
+            ]);
+        }
+        return ResponseHelper::errorResponse("Unable to delete confectionary images");
+
     }
 }
