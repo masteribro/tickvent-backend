@@ -15,7 +15,8 @@ return new class extends Migration
         Schema::create('permissions', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Role::class, 'role_id');
-            $table->longText('permission_description');
+            $table->longText('description')->nullable();
+            $table->longText('slug');
             $table->timestamps();
         });
     }

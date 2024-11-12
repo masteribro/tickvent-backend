@@ -7,7 +7,7 @@ use Vonage\SMS\Message\SMS;
 use Illuminate\Support\Str;
 
 class SmsMessage {
-    
+
     protected $basic;
     protected $client;
     public function __construct()
@@ -22,13 +22,19 @@ class SmsMessage {
         $response = $this->client->sms()->send(
             new SMS($to, $brand_name, $message)
         );
-        
+
         $message = $response->current();
-        
+
         if ($message->getStatus() == 0) {
-            Log::info("Sms Sent");
+            Log::info("Sms Sent " . $to);
+            return [
+                'status' => true
+            ];
         } else {
             Log::warning("Sms sending failed");
+            return [
+                'status' => false
+            ];
         }
     }
 }

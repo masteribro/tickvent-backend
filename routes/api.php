@@ -5,8 +5,12 @@ use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\BankApiController;
 use App\Http\Controllers\Api\ConfectionaryApiController;
 use App\Http\Controllers\Api\EventApiController;
+use App\Http\Controllers\Api\ItineraryApiController;
+use App\Http\Controllers\Api\OrderApiController;
 use App\Http\Controllers\Api\TicketApiController;
+use App\Http\Controllers\Api\RolePermissionApiController;
 use App\Models\Confectionary;
+use App\Services\RolePermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -43,23 +47,30 @@ Route::group(['prefix'=>'v1'],function() {
         });
 
         Route::group(["prefix" => "events"], function() {
+            Route::post('/create', [EventApiController::class, 'createEvent']);
+
             Route::get("", [EventApiController::class, 'index']); // getting all events
             Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // gettings specific events
 
-            Route::post('/create', [EventApiController::class, 'createEvent']);
-
+            Route::post('/interested/{event_id}',[EventApiController::class, 'interestedEvent']);
             // Route::post("/order", [EventApiController::class, ""]);
             // Route::post("/cart", [EventApiController::class, ""]);
         });
 
+        Route::post('/order-confectionary/{event_id}', [OrderApiController::class, 'orderConfectionary']);
         // Manage Events Endppoints
         Route::group(["prefix" => "manage-event", 'middleware' => 'event-owner'], static function() {
 
-            Route::get("/roles", [EventApiController::class, "getEventRoles"]);
-            Route::post("/roles", [EventApiController::class, "getEventRoles"]);
+            Route::get("/{event_id}/roles", [RolePermissionApiController::class, "getRolesToEvent"]);
+            Route::post("/{event_id}/roles", [RolePermissionApiController::class, "addRoleToEvent"]);
+            Route::post('/{event_id}/assign-role',[RolePermissionApiController::class, 'assignRole']);
 
-            Route::get("/permissions", [EventApiController::class, "getEventRolesPermission"]);
-            Route::post("/permissions", [EventApiController::class, "getEventRolesPermission"]);
+            Route::delete('/{event_id}/delete-role',[RolePermissionApiController::class, 'deleteRole']);
+
+            Route::post('/{event_id}/itinerary', [ItineraryApiController::class, 'addItinerary']);
+            Route::get('/{event_id}/itinerary/{allOrId}', [ItineraryApiController::class, 'getItineraries']);
+            Route::delete('/{event_id}/itinerary', [ItineraryApiController::class, 'deleteItineraries']);
+            Route::put('/{event_id}/itinerary/{id}', [ItineraryApiController::class, 'updateItineraryToDone']);
 
             Route::get("/{event_id}/confectionary/{allOrId}", [ConfectionaryApiController::class, "getEventConfectionary"]);
             Route::post("/{event_id}/confectionary", [ConfectionaryApiController::class, "addEventConfectionary"]);
@@ -73,10 +84,7 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
             Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);
 
-            Route::get("/itinerary", [EventApiController::class, "getItinerary"]);
-            Route::post("/itinerary", [EventApiController::class, "addItinerary"]);
-
-            // verify ticket
+           // verify ticket
             Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
             Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]);
         });

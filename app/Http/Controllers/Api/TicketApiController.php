@@ -33,11 +33,11 @@ class TicketApiController extends Controller
                     "tickects.*.price" => "required|decimal:2",
                     "tickets.*.table_for" => "required|regex:/[0-9]{1,}/",
                 ]);
-    
+
                 if($validator->fails()) {
                     return ResponseHelper::errorResponse("Validation error",$validator->errors());
                 }
-    
+
                 $resp = $this->ticketService->addTicketsToEvent($event, $request->all());
                 if(!$resp['status']) {
                     return ResponseHelper::errorResponse("Unable to add tickets to event",$validator->errors());
@@ -53,5 +53,9 @@ class TicketApiController extends Controller
 
         return ResponseHelper::errorResponse("Unable to add tickets to event");
     }
+
+    public function verifyTicket(Request $request, $event_id)
+    {
+        
+    }
 }
- 

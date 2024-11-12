@@ -1,8 +1,10 @@
 <?php
 namespace App\Services\Payment\Gateways;
 
+use App\Models\BankAccount;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use SebastianBergmann\Type\FalseType;
 
 class PaystackService
 {
@@ -113,15 +115,56 @@ class PaystackService
                 ];
             }
         }
-    } catch(\Throwable $th) {
-            Log::warning("Error in adding account to get way", [
-                "Error" => $th
-            ]);
+        } catch(\Throwable $th) {
+                Log::warning("Error in adding account to get way", [
+                    "Error" => $th
+                ]);
+        }
+
+            return [
+                'status' => false,
+                'meesage' => 'Unable to add account'
+            ];
     }
 
+    public function initializePayment($data)
+    {
+        try {
+            $url = config('paystack.base_url') . "/transaction/initialize";
+            $data['subaccount'] = BankAccount::where('id',$data["bank_account_id"])->first();
+            unset($data['bank_account_id']);
+            $res = Http::withHeaders($this->headers)->post($url,$data);
+
+            if($res->successful()) {
+                $resp = $res->json();
+
+                if($resp['status'] == true) {
+                    return [
+                        'status' => true,
+                        'data' => [
+                            "access_code" => $resp['data']['access_code'],
+                            "reference" => $resp['data']['reference'],
+                            "authorization_url" => $resp['data']['authorization_url']
+                        ]
+                    ];
+                } else {
+                    Log::warning("paystack error", [
+                        'err' => $res
+                    ]);
+                }
+            } else {
+                Log::warning("paystack error", [
+                    'err' => $res
+                ]);
+            }
+        } catch(\Throwable $th) {
+            Log::warning("error in adding role to event",[
+                '' => $th->getMessage() . ' on line '. $th->getLine() . ' in ' . $th->getFile()
+            ]);
+        }
+        
         return [
             'status' => false,
-            'meesage' => 'Unable to add account'
         ];
     }
 }

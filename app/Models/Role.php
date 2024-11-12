@@ -15,11 +15,18 @@ class Role extends Model
         'created_at',
         'updated_at'
     ];
-    
+
+    protected $with =[
+        'permissions'
+    ];
+
     public function permissions()
     {
         return $this->hasMany(Permission::class);
     }
 
-
+    public function assignees()
+    {
+        return $this->hasMany(EventRolesAssignee::class);
+    }
 }

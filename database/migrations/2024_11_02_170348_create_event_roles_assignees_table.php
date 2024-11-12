@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Event;
-use App\Models\User;
+use App\Models\Role;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,22 +13,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        Schema::create('event_roles_assignees', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Event::class, 'event_id');
+            $table->foreignIdFor(Role::class);
+            $table->foreignIdFor(Event::class);
             $table->string('name');
-            $table->string('slug');
-            $table->longText('description')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->longText('note')->nullable();
             $table->timestamps();
         });
-
     }
 
     /**
-     * Reverse the migrations
+     * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('event_roles_assignees');
     }
 };

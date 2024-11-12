@@ -1,46 +1,35 @@
 <?php
 namespace App\Services;
 
-use App\Mail\RoleAssignmentMail;
-use App\Models\Event;
-use App\Models\EventRolesAssignee;
-use App\Models\Permission;
-use App\Models\Role;
+use App\Models\Itinerary;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class RolePermissionService {
+class ItineraryService {
 
-    public function addRoleAndPermissionEvent($role_payload)
+    public function AddItinerary($data)
     {
         try {
 
             DB::beginTransaction();
 
-            $role = Role::updateOrCreate([
-                'slug' => $role_payload['name'],
-                'event_id' => $role_payload['event_id']
+            $itinerary = Itinerary::updateOrCreate([
+                'slug' => $data['title'],
+                'event_id' => $data['event_id']
             ],[
-                'name' => $role_payload['name'],
-                'description' => $role_payload['description'],
+                'title' => $data['title'],
+                'time' => $data['time'],
+                'content' => $data['content']
             ]);
 
-            $res = $this->addPermissionsToRole($role, $role_payload['permissions']);
+            DB::commit();
 
-            if($res['status']) {
-                DB::commit();
-
-                $role->refresh();
-
-                return [
+            return [
                     'status' => true,
-                    'data' => $role
+                    'data' => $itinerary
                 ];
-            }
-
-
-        } catch (\Throwable $th) {
+            } catch (\Throwable $th) {
             DB::rollBack();
             Log::warning('Error in creating role', [
                 'error' => $th

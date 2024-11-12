@@ -16,10 +16,11 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Event::class, 'event_id');
             $table->string('title');
-            $table->longText('content');
+            $table->longText('content')->nullable();
+            $table->longText('slug')->nullable();
             $table->time('time');
-            $table->integer('order');
-            $table->integer('current');
+            $table->boolean('done')->default(false);
+            $table->boolean('current')->default(0);
             $table->timestamps();
         });
     }
