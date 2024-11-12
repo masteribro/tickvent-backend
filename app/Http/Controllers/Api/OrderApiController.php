@@ -15,7 +15,7 @@ class OrderApiController extends Controller
 {
     public function __construct(public OrderService $orderService)
     {
-        
+
     }
 
     public function orderConfectionary(Request $request, $event_id)
@@ -29,7 +29,7 @@ class OrderApiController extends Controller
                     $existsInConfectionary = false;
                     $existsInConfectionaryAttachment = false;
                     $index = str_replace('items.', '', explode('.', $attribute)[1] ?? 0);
-            
+
                     // Check the type of item and validate existence in the corresponding table
                     if ($request->items[$index]['type'] === 'confectionary') {
                         $existsInConfectionary = Confectionary::where('id', $value)
@@ -39,24 +39,25 @@ class OrderApiController extends Controller
                         $existsInConfectionaryAttachment = ConfectionaryAttachment::where('id', $value)
                             ->exists();
                     }
-            
+
                     // Fail validation if the item doesn't exist in either table
                     if (!$existsInConfectionary && !$existsInConfectionaryAttachment) {
                         $fail("The selected {$attribute} is invalid.");
                     }
                 },
-    
+
                     ],
                 "items.*.type" => "required|string|in:confectionary,attachment",
                 "items.*.quantity" => "required|integer"
             ]);
-    
+
             if($validator->fails()) {
                 return ResponseHelper::errorResponse("Validation Error", $validator->errors());
             }
             $data = $request->all();
             $data['user_id'] = $request->user()->id;
-     
+            $data['payment_for'] = "confectionary_order";
+
             $res = $this->orderService->getPaymentUrl($data);
 
             if($res['status']) {
@@ -69,6 +70,6 @@ class OrderApiController extends Controller
         }
 
         return ResponseHelper::errorResponse("Unable to generate");
-        
+
     }
 }

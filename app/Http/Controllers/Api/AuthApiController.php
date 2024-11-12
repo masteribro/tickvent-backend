@@ -27,7 +27,7 @@ class AuthApiController extends Controller
         $this->user = auth('sanctum')->user();
     }
 
-    public function register(Request $request) 
+    public function register(Request $request)
     {
        try {
 
@@ -50,13 +50,13 @@ class AuthApiController extends Controller
 
         if($resp["status"]) {
             return ResponseHelper::successResponse($resp["message"]);
-        } 
+        }
 
         return ResponseHelper::errorResponse($resp["message"]);
-    
+
        } catch (\Throwable $throwable) {
         Log::warning("Registration Error", [
-            "error" => $throwable
+            "error" => $throwable->getMessage()
         ]);
        }
         return ResponseHelper::errorResponse("Unable to create an account, try again later", []);
@@ -69,11 +69,11 @@ class AuthApiController extends Controller
                 "otp" => "required|digits:6",
                 "email" => "required|exists:users,email"
             ]);
-    
+
             if($validator->fails()){
                 return ResponseHelper::errorResponse("Validation Error",$validator->errors());
             }
-    
+
             $user = UserService::getUser(request('email'));
 
             $resp = OtpService::verifyOtp(request('otp'), $user, 'registration');
@@ -81,7 +81,7 @@ class AuthApiController extends Controller
                 $resp = OtpService::sendOtp("registration",$user);
                 if($resp["status"]) return ResponseHelper::errorResponse('Invalid OTP, OTP resent!');
             }
-            
+
             $user->update([
                 "api_token" => $user->createToken($user->email)->plainTextToken,
                 "api_test_token" => $user->createToken($user->email)->plainTextToken,
@@ -109,12 +109,12 @@ class AuthApiController extends Controller
                 "passcode" => "required_if:is_mobile,true|digits:6",
                 "password" => ["required_if:is_mobile,false", Password::min(8)->mixedCase()->letters()->symbols()]
             ]);
-    
+
             if($validation->fails()){
                 return ResponseHelper::errorResponse("Validation Error",$validation->errors());
             }
 
-            $user = UserService::getUser($request->email); 
+            $user = UserService::getUser($request->email);
             if(!$user->is_verified) {
                 $resp = OtpService::sendOtp("registration", $user);
                 if(!$resp['status']) {
@@ -125,7 +125,7 @@ class AuthApiController extends Controller
             } else if(!Hash::check($request->passcode ?? $request->password, $user->password)) {
                 return ResponseHelper::errorResponse("Invalid credentials, please confirmed or set your password");
             }
-            
+
             // if(!$user->email_verified_at) {
 
             //     UserVerificationJob::dispatch($user);
@@ -148,21 +148,21 @@ class AuthApiController extends Controller
         return ResponseHelper::errorResponse("Unable to login right now, please try again later", []);
     }
 
-    public function changePassword(Request $request) 
+    public function changePassword(Request $request)
     {
         try {
 
             $token = request()->bearerToken();
 
             $user = UserService::getUser($token);
-            
+
             if($user == null) {
                 return   ResponseHelper::errorResponse("User not found");
             }
 
             $validator = \Validator::make($request->all(), [
                 "is_mobile" => "required|boolean",
-                "otp"=> "required|digits:6", 
+                "otp"=> "required|digits:6",
                 "old_passcode" => ["required_if:is_mobile,true", "digits:6", function($attribute, $value, Closure $fail) use ($user) {
                     if(!Hash::check($value, $user->password) ){
                         $fail("The {$attribute} must matched the current password");
@@ -185,7 +185,7 @@ class AuthApiController extends Controller
             if($validator->fails()){
                 return ResponseHelper::errorResponse("Validation Error",$validator->errors());
             }
-            
+
             $otp = $request->otp;
             $res = OtpService::verifyOtp($otp, $user, 'change_password');
 
@@ -196,7 +196,7 @@ class AuthApiController extends Controller
                        "password_reset_time" => now()->format("Y-m-d H:i:s")
                     ]
                 );
-              
+
                 return ResponseHelper::successResponse($request->is_mobile ? 'Passcode changed successfully' : 'Password changed successfully');
 
             }
@@ -205,16 +205,16 @@ class AuthApiController extends Controller
 
 
         } catch (\Exception $e) {
-            Log::warning("change password error",[ 
+            Log::warning("change password error",[
                 "" => $e
             ]);
         }
         return ResponseHelper::errorResponse("Unable to change password, something went wrong");
     }
 
-    public function verifyOtp(Request $request) 
+    public function verifyOtp(Request $request)
     {
-    
+
         try {
             $validator = \Validator::make($request->all(), [
                 'email' => "required_if:otp_for,forget_password,verify_email,password_reset|exists:users,email",
@@ -255,7 +255,7 @@ class AuthApiController extends Controller
                     $message = 'Phone number verified';
                 }
                 return ResponseHelper::successResponse($message);
-            } 
+            }
 
             return ResponseHelper::errorResponse($res["message"]);
 
@@ -269,7 +269,7 @@ class AuthApiController extends Controller
 
     }
 
-    public function sendOtp() 
+    public function sendOtp()
     {
         try {
 
@@ -308,7 +308,7 @@ class AuthApiController extends Controller
     }
 
 
-    public function resetPassword(Request $request) 
+    public function resetPassword(Request $request)
     {
         try {
             $validator = \Validator::make(request()->all(), [
@@ -334,7 +334,7 @@ class AuthApiController extends Controller
 
                 $otp = $request->otp;
                 $res = OtpService::verifyOtp($otp, $user, 'password_reset');
-    
+
                 if($res['status']) {
                     $user->update(
                         [
@@ -342,15 +342,15 @@ class AuthApiController extends Controller
                            "password_reset_time" => now()->format("Y-m-d H:i:s")
                         ]
                     );
-                  
+
                     return ResponseHelper::successResponse($request->is_mobile ? 'Passcode changed successfully' : 'Password changed successfully');
-    
+
                 } else {
                     return ResponseHelper::errorResponse($res["message"]);
                 }
-                
+
             } catch (\Exception $e) {
-                Log::warning("change password error",[ 
+                Log::warning("change password error",[
                     "" => $e
                 ]);
             }
@@ -358,7 +358,7 @@ class AuthApiController extends Controller
             return ResponseHelper::errorResponse("Unable to reset password");
     }
 
-    public function getProfile() 
+    public function getProfile()
     {
         $user = auth('sanctum')->user();
 
@@ -380,17 +380,17 @@ class AuthApiController extends Controller
                  "phone_number" => ["nullable" ,"string","unique:users,phone_number," . $user->id,"regex:/0[7-9][0-1]\d{8}/"],
                  "location" => "nullable|string",
              ]);
-     
+
              if($validation->fails()){
                  return ResponseHelper::errorResponse("Validation Error",$validation->errors());
             }
-    
+
              $data = $request->all();
-    
+
              $user->update($data);
-    
+
              return ResponseHelper::successResponse("Profile update successfully");
-    
+
         } catch(\Throwable $throwable) {
             Log::warning("Update Profile Error", [
                 "" => $throwable
@@ -399,7 +399,7 @@ class AuthApiController extends Controller
             return ResponseHelper::errorResponse("Unable to update profile");
 
         }
-      
+
     }
 
     public function getOrganizerProfile()
@@ -425,17 +425,17 @@ class AuthApiController extends Controller
                  "organizer_info" => ["nullable" ,"string"],
                  "organizer_img" => "nullable|string",
              ]);
-     
+
              if($validation->fails()){
                  return ResponseHelper::errorResponse("Validation Error",$validation->errors());
             }
-    
+
              $data = $request->all();
-    
+
              $user->update($data);
-    
+
              return ResponseHelper::successResponse("Organizer Profile updated successfully");
-    
+
         } catch(\Throwable $throwable) {
             Log::warning("Update Organizer Profile Error", [
                 "" => $throwable
@@ -443,13 +443,13 @@ class AuthApiController extends Controller
 
             return ResponseHelper::errorResponse("Unable to update profile");
         }
-      
+
     }
     public function getNotificationsSettings()
     {
         try {
             $user = auth('sanctum')->user();
-        
+
             $data = (new NotificationService())->getNotifications($user);
 
             return ResponseHelper::successResponse("Notification Settings Retrieved",$data);
@@ -463,7 +463,7 @@ class AuthApiController extends Controller
 
     }
 
-    public function updateNotificationSettings() 
+    public function updateNotificationSettings()
     {
         try {
             $user = $this->user;
@@ -485,7 +485,7 @@ class AuthApiController extends Controller
         $resp = (new NotificationService)->updateNotifications($request->notifications, $user);
             if($resp["status"]) {
                 return ResponseHelper::successResponse("Notification updated successfull");
-            }    
+            }
 
         } catch(\Throwable $throwable){
             Log::warning("Error in setting notification",[
@@ -493,7 +493,7 @@ class AuthApiController extends Controller
             ]);
         }
         return ResponseHelper::errorResponse("Unable to update notification");
-        
+
     }
 
     public function getBanks()
@@ -508,11 +508,11 @@ class AuthApiController extends Controller
                 "error" => $th
             ]);
         }
-        
+
         return ResponseHelper::errorResponse("Unable to get banks");
     }
 
-    public function addBank() 
+    public function addBank()
     {
         // you will need to add authentication to this
         $user = auth('sanctum')->user();
@@ -523,7 +523,7 @@ class AuthApiController extends Controller
             "account_name" => "required|string",
             "account_number" => "required|string|regex:/[0-9]{10}/"
             ]);
-    
+
         if($validation->fails()){
             return ResponseHelper::errorResponse("Validation Error",$validation->errors());
         }

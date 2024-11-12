@@ -43,5 +43,10 @@ class Event extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    public function bank()
+    {
+        return BankAccount::where('id', $this->bank_account_id)->first();
+    }
 
+    
 }

@@ -56,6 +56,6 @@ class TicketApiController extends Controller
 
     public function verifyTicket(Request $request, $event_id)
     {
-        
+
     }
 }

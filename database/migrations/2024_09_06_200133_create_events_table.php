@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\BankAccount;
 use App\Models\EventOrganizer;
 use App\Models\User;
 use Carbon\Carbon;
@@ -25,7 +26,7 @@ return new class extends Migration
             $table->text("streaming_url")->nullable();
 
             $table->date("start_date");
-            $table->date("end_date")->default(DB::raw('CURRENT_DATE'))->nullable();
+            $table->date("end_date")->nullable();
             $table->time("start_time");
             $table->time("end_time")->nullable();
 
@@ -35,6 +36,7 @@ return new class extends Migration
             $table->enum("type", ['physical','virtual', 'hybrid'])->default('physical');
             $table->longText("tags")->nullable();
             $table->integer("rating")->nullable();
+            $table->foreignIdFor(BankAccount::class)->nullable();
             $table->timestamps();
         });
     }

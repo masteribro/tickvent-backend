@@ -2,6 +2,7 @@
 namespace App\Services\Payment\Gateways;
 
 use App\Models\BankAccount;
+use App\Models\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use SebastianBergmann\Type\FalseType;
@@ -131,8 +132,25 @@ class PaystackService
     {
         try {
             $url = config('paystack.base_url') . "/transaction/initialize";
-            $data['subaccount'] = BankAccount::where('id',$data["bank_account_id"])->first();
+            $event = Event::where('id', $data['event_id'])->first();
+            if($event) {
+                $bank_account = BankAccount::where('id', $event->bank_account_id)->first();
+            } else {
+                $bank_account = BankAccount::where('user_id', $event->user_id)->where('default', 1)->first();
+            }
+
+            if(!$bank_account) {
+                return [
+                    'status' => false
+                ];
+            }
+
+            $data["subaccount"] = $bank_account->split_code;
+
             unset($data['bank_account_id']);
+            Log::warning("Order Data", [
+                'data' => $data
+            ]);
             $res = Http::withHeaders($this->headers)->post($url,$data);
 
             if($res->successful()) {
@@ -162,7 +180,7 @@ class PaystackService
                 '' => $th->getMessage() . ' on line '. $th->getLine() . ' in ' . $th->getFile()
             ]);
         }
-        
+
         return [
             'status' => false,
         ];
