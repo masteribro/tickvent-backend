@@ -12,6 +12,7 @@ use App\Models\EventOrganizer;
 use App\Models\EventTag;
 use App\Models\Ticket;
 use App\Services\EventImageService;
+use App\Services\Payment\PaymentService;
 use App\Services\ReminderService;
 use App\Services\TagsService;
 use Carbon\Carbon;
@@ -261,4 +262,57 @@ class EventApiController extends Controller
         return "kdskdk";
     }
 
+    public function bookEvent(Request $request, $event_id)
+    {
+        try {
+
+            $validator = \Validator::make($request->all(),[
+                'ticket_id' => ['required', 'bail','exists:tickets,id' ,function($attribute, $value, $fail) use($event_id) {
+                        $ticket = Ticket::where('id', $value)->first();
+
+                        Log::warning('dsh', [
+                            'ticket_id' => $ticket->id,
+                            'event_id' => $event_id
+                        ]);
+
+                        if($ticket->event_id != $event_id) {
+                            $fail('wrong ticket id');
+                        }
+                }],
+                'quantity' => 'required|integer'
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+            $ticket = Ticket::where('id', $request->ticket_id)->first();
+
+            $payload = $request->all();
+            $payload['user_id'] = auth('sanctum')->user()->id;
+            $payload['event_id'] = $event_id;
+
+            $payload['payment_for'] = 'book_ticket';
+            $payload['reference'] = "TKVT" . time();
+            $payload['subaccount'] = $ticket->account->split_code;
+            $payload['amount'] = $ticket->price * $payload['quantity'];
+            $payload['email'] = auth('sanctum')->user()->email;
+
+
+            $resp = (new PaymentService)->generatePaymentUrl($payload);
+
+            if($resp['status'])  {
+                return ResponseHelper::successResponse("Payment Link generated successful", [
+                    'checkout_url' => $resp['data']['authorization_url']
+                ]);
+            }
+
+        } catch (\Throwable $th) {
+            Log::warning("error in ordering ",[
+                '' => $th->getMessage() . ' on line '. $th->getLine() . ' in ' . $th->getFile()
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to book");
+    }
 }

@@ -11,7 +11,7 @@ class Ticket extends Model
 
     protected $guarded = ['id'];
 
-    public function event() 
+    public function event()
     {
         return $this->belongsTo(Event::class);
     }
@@ -19,5 +19,10 @@ class Ticket extends Model
     public function purchasedTickets()
     {
         return $this->hasMany(PurchasedTicket::class);
+    }
+
+    public function getAccountAttribute()
+    {
+        return BankAccount::where('id', $this->bank_account_id)->first();
     }
 }

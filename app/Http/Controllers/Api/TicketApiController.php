@@ -58,4 +58,6 @@ class TicketApiController extends Controller
     {
 
     }
+
+    public
 }

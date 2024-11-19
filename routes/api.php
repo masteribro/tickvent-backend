@@ -47,12 +47,16 @@ Route::group(['prefix'=>'v1'],function() {
         });
 
         Route::group(["prefix" => "events"], function() {
-            Route::post('/create', [EventApiController::class, 'createEvent']);
-
             Route::get("", [EventApiController::class, 'index']); // getting all events
-            Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // gettings specific events
+
+            Route::post('/create', [EventApiController::class, 'createEvent']); // create events
+
+            Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // getting specific event(s)
 
             Route::post('/interested/{event_id}',[EventApiController::class, 'interestedEvent']);
+
+            Route::post('/book-event/{event_id}', [EventApiController::class, 'bookEvent']);
+
             // Route::post("/order", [EventApiController::class, ""]);
             // Route::post("/cart", [EventApiController::class, ""]);
         });
@@ -84,9 +88,9 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
             Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);
 
-           // verify ticket
+
             Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
-            Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]);
+            Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]); // verify ticket
         });
 
         // Admin Endpoint
@@ -96,7 +100,7 @@ Route::group(['prefix'=>'v1'],function() {
         });
 
     });
+
+    Route::post('/callback_url/{gateway}/webhook',  );
 });
 
-
-// ->middleware('auth:sanctum');
