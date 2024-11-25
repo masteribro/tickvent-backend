@@ -46,6 +46,9 @@ Route::group(['prefix'=>'v1'],function() {
             Route::put("/notifications", [AuthApiController::class, "updateNotificationSettings"]);
         });
 
+        Route::get('/get-tickets', [AuthApiController::class, 'getTickets']);
+        
+
         Route::group(["prefix" => "events"], function() {
             Route::get("", [EventApiController::class, 'index']); // getting all events
 
@@ -56,6 +59,10 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post('/interested/{event_id}',[EventApiController::class, 'interestedEvent']);
 
             Route::post('/book-event/{event_id}', [EventApiController::class, 'bookEvent']);
+
+            Route::get("/verify-ticket/{purchase_ticket_id}", [TicketApiController::class, "verifyTicket"]); // verify ticket
+
+            Route::get("/verify-ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "verifyTicket"]); // verify ticket
 
             // Route::post("/order", [EventApiController::class, ""]);
             // Route::post("/cart", [EventApiController::class, ""]);
@@ -90,8 +97,8 @@ Route::group(['prefix'=>'v1'],function() {
 
 
             Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
-            Route::get("/verify-ticket/{ticket_id}/{invite?}", [TicketApiController::class, "verifyTicket"]); // verify ticket
         });
+
 
         // Admin Endpoint
 

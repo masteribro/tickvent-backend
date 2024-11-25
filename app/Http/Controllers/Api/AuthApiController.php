@@ -8,6 +8,7 @@ use App\Jobs\UserVerificationJob;
 use App\Models\BankAccount;
 use App\Models\Notification;
 use App\Models\Otp;
+use App\Models\PurchasedTicket;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\OtpService;
@@ -539,5 +540,21 @@ class AuthApiController extends Controller
     {
         // Talk to Paystack
         // PaystackService::getBankCodes
+    }
+
+    public function getTickets()
+    {
+        try {
+
+            return ResponseHelper::successResponse("All successfully booked tickets", [
+                'status' => true,
+                'data' => PurchasedTicket::where('user_id', auth('sanctum')->user()->id)->where('status', 'paid')->get()
+            ]);
+
+        } catch(\Throwable $th){
+            Log::warning("tickets" , [
+                'error' => $th
+            ]);
+        }
     }
 }

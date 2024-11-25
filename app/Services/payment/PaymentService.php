@@ -33,7 +33,32 @@ class PaymentService {
         return [
             'status' => false
         ];
-        
+
+    }
+
+    public function verifyTransaction($reference)
+    {
+        try {
+
+            if($this->gateways[0] === 'paystack') {
+                $resp = (new PaystackService)->verifyTransaction($reference);
+                if($resp['status']) {
+                    return [
+                        "status" => true,
+                        "data" => $resp["data"]
+                    ];
+                }
+            }
+
+        } catch (\Throwable $th) {
+            Log::warning("error in verifying transaction",[
+                '' => $th->getMessage() . ' on line '. $th->getLine() . ' in ' . $th->getFile()
+            ]);
+        }
+
+        return [
+            'status' => false
+        ];
     }
 }
 

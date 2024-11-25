@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\EventOrganizer;
 use App\Models\EventTag;
+use App\Models\PurchasedTicket;
 use App\Models\Ticket;
 use App\Services\EventImageService;
 use App\Services\Payment\PaymentService;
@@ -17,6 +18,7 @@ use App\Services\ReminderService;
 use App\Services\TagsService;
 use Carbon\Carbon;
 use Closure;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PhpParser\Node\Expr\FuncCall;
 
@@ -120,7 +122,7 @@ class EventApiController extends Controller
                     "tags" => "nullable|array",
                     "tags.*" => "required|string",
                     "images" => "nullable|array",
-                    "images.*" => "required|string"
+                    "images.*" => "required|mimes:jpeg,png,svg,gif,mp4,webm,avi,avchd,mkv,wmv"
                 ]);
 
                 if($validator->fails()) {
@@ -270,11 +272,6 @@ class EventApiController extends Controller
                 'ticket_id' => ['required', 'bail','exists:tickets,id' ,function($attribute, $value, $fail) use($event_id) {
                         $ticket = Ticket::where('id', $value)->first();
 
-                        Log::warning('dsh', [
-                            'ticket_id' => $ticket->id,
-                            'event_id' => $event_id
-                        ]);
-
                         if($ticket->event_id != $event_id) {
                             $fail('wrong ticket id');
                         }
@@ -286,25 +283,10 @@ class EventApiController extends Controller
                 return ResponseHelper::errorResponse("Validation Error", $validator->errors());
             }
 
-            $ticket = Ticket::where('id', $request->ticket_id)->first();
+            $resp = $this->purchaseTicket($request,$event_id);
 
-            $payload = $request->all();
-            $payload['user_id'] = auth('sanctum')->user()->id;
-            $payload['event_id'] = $event_id;
-
-            $payload['payment_for'] = 'book_ticket';
-            $payload['reference'] = "TKVT" . time();
-            $payload['subaccount'] = $ticket->account->split_code;
-            $payload['amount'] = $ticket->price * $payload['quantity'];
-            $payload['email'] = auth('sanctum')->user()->email;
-
-
-            $resp = (new PaymentService)->generatePaymentUrl($payload);
-
-            if($resp['status'])  {
-                return ResponseHelper::successResponse("Payment Link generated successful", [
-                    'checkout_url' => $resp['data']['authorization_url']
-                ]);
+            if($resp['status']) {
+                return ResponseHelper::successResponse("Event ticket checkout",$resp);
             }
 
         } catch (\Throwable $th) {
@@ -314,5 +296,51 @@ class EventApiController extends Controller
         }
 
         return ResponseHelper::errorResponse("Unable to book");
+    }
+
+    private function purchaseTicket($request, $event_id) {
+        try {
+            DB::beginTransaction();
+
+            $ticket = Ticket::where('id', $request->ticket_id)->first();
+
+            $payload = $request->all();
+            $payload['user_id'] = auth('sanctum')->user()->id;
+            $payload['event_id'] = $event_id;
+            $payload['invitations'] = $ticket->table_for * $payload['quantity'];
+
+            $payload['reference'] = "TKVT" . time();
+
+            PurchasedTicket::create($payload);
+
+            $payload['payment_for'] = 'book_ticket';
+            $payload['subaccount'] = $ticket->account->split_code;
+            $payload['amount'] = $ticket->price * $payload['quantity'];
+            $payload['email'] = auth('sanctum')->user()->email;
+            // $payload['verification_url'] = ""
+
+
+            $resp = (new PaymentService)->generatePaymentUrl($payload);
+
+            if($resp['status'])  {
+                DB::commit();
+                return [
+                    'status' => true,
+                    'data' => [
+                        'checkout_url' => $resp['data']['authorization_url']
+                    ]
+                ];
+            }
+
+        } catch(\Throwable $th) {
+            DB::rollBack();
+            Log::warning('Error in setting up purchase tickvent',[
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => false,
+        ];
     }
 }

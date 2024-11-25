@@ -8,4 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class PurchasedTicket extends Model
 {
     use HasFactory;
+
+    protected $guarded = ['id'];
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
+    }
+
 }

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Models\BankAccount;
 use App\Models\Event;
+use App\Models\PurchasedTicket;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -26,8 +28,13 @@ class TicketApiController extends Controller
             }
 
                 $validator = \Validator::make($request->all(),[
-                    "bank_account_id" => "required|integer",
                     "is_free" => "required|boolean",
+                    "bank_account_id" => ["required:is_free,false","integer","exists:bank_accounts,id", function ($attribute, $value, $fail) use($request) {
+                        $bankAccount = BankAccount::find($value);
+                        if($bankAccount->user_id !== $request->user()->id) {
+                            $fail('Bank Account does not belong to user');
+                        }
+                    }],
                     "tickets" => "required_if:is_free,false|array",
                     "tickects.*.type" => "required|string|max:30",
                     "tickects.*.price" => "required|decimal:2",
@@ -54,10 +61,29 @@ class TicketApiController extends Controller
         return ResponseHelper::errorResponse("Unable to add tickets to event");
     }
 
-    public function verifyTicket(Request $request, $event_id)
+    public function verifyTicket(Request $request, $purchase_ticket_id)
     {
+        try {
+            //code...
+            $purchaseTicket = PurchasedTicket::find($purchase_ticket_id);
 
+            if(!$purchaseTicket) {
+                return ResponseHelper::errorResponse('Not found',[],404);
+            }
+
+            $resp = $this->ticketService->verifyTransaction($purchaseTicket);
+
+            if($resp['status']) {
+                return ResponseHelper::successResponse($resp['message'],$resp['data']);
+            }
+
+            return ResponseHelper::errorResponse($resp['message']);
+
+        } catch (\Throwable $th) {
+            Log::warning("error in verify the status of ticket", [
+                'error' => $th
+            ]);
+        }
+        return ResponseHelper::errorResponse('Unable to verify status of Ticket');
     }
-
-    public
 }

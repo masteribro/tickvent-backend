@@ -16,9 +16,11 @@ return new class extends Migration
     {
         Schema::create('purchased_tickets', function (Blueprint $table) {
             $table->id();
+            $table->longText('reference');
             $table->foreignIdFor(User::class, "user_id");
             $table->foreignIdFor(Ticket::class, "ticket_id");
             $table->foreignIdFor(Event::class, "event_id");
+            $table->enum('status',['pending','paid','refund'])->default('pending');
             $table->integer("invitations");
             $table->timestamps();
         });

@@ -3,9 +3,18 @@
 namespace App\Services;
 
 use App\Models\Ticket;
+use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\Log;
 
 class TicketService {
+
+    public $paymentService;
+
+    public function __construct()
+    {
+        $this->paymentService = (new PaymentService());
+
+    }
 
     public static function addTicketsToEvent($event, $payload)
     {
@@ -40,6 +49,43 @@ class TicketService {
         }
         return [ 'status' => false ];
 
+    }
+
+    public static function verifyTransaction($purchaseTicket)
+    {
+        try {
+
+            $response = (new PaymentService)->verifyTransaction($purchaseTicket->reference);
+
+            if($response['status']) {
+                $data = $response["data"];
+
+                if($data["status"] == 'success') {
+                    $purchaseTicket->update([
+                        'status' => 'paid'
+                    ]);
+
+                }
+
+                $purchaseTicket->refresh();
+            }
+
+            return [
+                'status' => true,
+                "data" => $purchaseTicket,
+                'message' => "Verification successful"
+            ];
+
+        } catch (\Throwable $th) {
+            Log::warning("Error in verifying transaction in tickets",[
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => false,
+            'message' => "Verification unsuccessful"
+        ];
     }
 
 }

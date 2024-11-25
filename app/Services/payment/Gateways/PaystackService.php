@@ -185,4 +185,36 @@ class PaystackService
             'status' => false,
         ];
     }
+
+    public function verifyTransaction($reference)
+    {
+        try {
+            $resp = Http::withHeaders($this->headers)->get( config('paystack.base_url') . '/transaction/verify/' . $reference );
+
+                if($resp->failed()) {
+                    return [
+                        "status" => false,
+                        "data" => $resp->json()
+                    ];
+                }
+
+                if($resp["status"]) {
+                    return [
+                        "status" => true,
+                        "data" => $resp["data"],
+                        "message" => $resp["message"]
+                    ];
+                }
+
+            } catch(\Throwable $th) {
+                Log::warning("Verify Transaction", [
+                    "error" => $th
+                ]);
+            }
+
+            return [
+                "status" => false,
+                "message" => "Unable to verify transaction"
+            ];
+    }
 }
