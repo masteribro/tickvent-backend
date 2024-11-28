@@ -9,9 +9,6 @@ use App\Http\Controllers\Api\ItineraryApiController;
 use App\Http\Controllers\Api\OrderApiController;
 use App\Http\Controllers\Api\TicketApiController;
 use App\Http\Controllers\Api\RolePermissionApiController;
-use App\Models\Confectionary;
-use App\Services\RolePermissionService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix'=>'v1'],function() {
@@ -47,7 +44,7 @@ Route::group(['prefix'=>'v1'],function() {
         });
 
         Route::get('/get-tickets', [AuthApiController::class, 'getTickets']);
-        
+
 
         Route::group(["prefix" => "events"], function() {
             Route::get("", [EventApiController::class, 'index']); // getting all events
@@ -62,7 +59,10 @@ Route::group(['prefix'=>'v1'],function() {
 
             Route::get("/verify-ticket/{purchase_ticket_id}", [TicketApiController::class, "verifyTicket"]); // verify ticket
 
-            Route::get("/verify-ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "verifyTicket"]); // verify ticket
+            Route::get("/ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "verifyTicket"]); // verify ticket
+
+            Route::post("/ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "sendTicketInvite"]); // verify ticket
+
 
             // Route::post("/order", [EventApiController::class, ""]);
             // Route::post("/cart", [EventApiController::class, ""]);

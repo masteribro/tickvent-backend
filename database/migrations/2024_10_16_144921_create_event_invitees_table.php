@@ -21,7 +21,9 @@ return new class extends Migration
             $table->foreignIdFor(Event::class, "event_id");
             $table->foreignIdFor(User::class, "user_id");
             $table->foreignIdFor(PurchasedTicket::class, "purchased_ticket_id");
-            $table->boolean('status');
+            $table->longText('invitation_url')->nullable();
+            $table->longText('code')->nullable();
+            $table->enum('status',['pending','accepted','rejected'])->default('pending');
             $table->timestamps();
         });
     }

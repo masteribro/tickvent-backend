@@ -21,7 +21,8 @@ return new class extends Migration
             $table->foreignIdFor(Ticket::class, "ticket_id");
             $table->foreignIdFor(Event::class, "event_id");
             $table->enum('status',['pending','paid','refund'])->default('pending');
-            $table->integer("invitations");
+            $table->bigInteger("invitations");
+            $table->bigInteger("invitations_sent")->nullable();
             $table->timestamps();
         });
     }

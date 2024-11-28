@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\EventInvitee;
 use App\Models\Ticket;
 use App\Services\Payment\PaymentService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TicketService {
@@ -88,4 +90,29 @@ class TicketService {
         ];
     }
 
+    public static function sendInvitation($invitee_email, $ticket_owner_id, $event_id, $purchase_ticket_id)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Save Invites and send notification
+
+            $invitee = EventInvitee::firstOrCreate([
+                'email' => $invitee_email,
+                'event_id' => $event_id,
+                'user_id' => $ticket_owner_id,
+                'purchased_ticket_id' => $purchase_ticket_id
+            ]);
+
+            $invitee->refresh();
+            
+            NotificationService::sendEventInvitation($invitee);
+
+        }  catch (\Throwable $th) {
+            DB::rollback();
+            Log::warning('Error in creating invite and sending',[
+                'error' => $th
+            ]);
+        }
+    }
 }

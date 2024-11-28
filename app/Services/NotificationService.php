@@ -1,7 +1,9 @@
-<?php 
+<?php
 
 namespace App\Services;
 
+use App\Jobs\EventInvitation;
+use App\Jobs\EventInvitationJob;
 use App\Mail\OtpMail;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Log;
@@ -34,10 +36,10 @@ class NotificationService {
                         "type" => $item,
                     ],
                     [
-                        
+
                     ]);
             });
-            
+
         }
         return [
             "email" => Notification::where("channel", "email")->where("user_id", $user->id)->get(),
@@ -52,8 +54,8 @@ class NotificationService {
                 $item["user_id"] = $user->id;
                 return $item;
             }, $notifications);
-            
-    
+
+
             collect($notifications)->map(function ($notification) {
                 Notification::updateOrCreate([
                     'user_id' => $notification["user_id"],
@@ -76,5 +78,10 @@ class NotificationService {
         return [
             "status" => false
         ];
+    }
+
+    public static function sendEventInvitation($invitee)
+    {
+        EventInvitationJob::dispatch($invitee);
     }
 }

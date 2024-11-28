@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use App\Models\Event;
+use App\Models\EventInvitee;
 use App\Models\PurchasedTicket;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
@@ -85,5 +86,42 @@ class TicketApiController extends Controller
             ]);
         }
         return ResponseHelper::errorResponse('Unable to verify status of Ticket');
+    }
+
+    public function sendTicketInvite(Request $request, $purchase_ticket_id)
+    {
+        $purchaseTicket = PurchasedTicket::find($purchase_ticket_id);
+
+        if(!$purchaseTicket) {
+            return ResponseHelper::errorResponse("Ticket not found");
+        }
+
+        if($purchaseTicket && $purchaseTicket->user_id !== $request->user()->id ) {
+            return ResponseHelper::errorResponse("Unauthorized");
+        }
+
+        if($purchaseTicket && $purchaseTicket->status !== 'paid') {
+            return ResponseHelper::errorResponse("Ticket not paid");
+        }
+
+        if(!($purchaseTicket->invitations_sent < $purchaseTicket->invitations)) {
+            return ResponseHelper::errorResponse("Invitations for this ticket have been exhausted");
+        }
+
+        $validator = \Validator::make($request->all(),[
+            "email" => ['required', 'email', function ($attribute, $value, $fail) use ($request, $purchaseTicket) {
+                $invitee = EventInvitee::where('email',$value)->where(
+                    'purchased_ticket_id', $purchaseTicket->id
+                )->exists();
+
+                if($invitee) $fail('Invitation has already been sent to this email');
+            }]
+        ]);
+
+        if($validator->fails()) {
+            return ResponseHelper::errorResponse("Validation error",$validator->errors());
+        }
+
+        $resp = $this->ticketService->sendInvitation($invitee_email, $ticket_owner_id, $event_id, $purchase_ticket_id);
     }
 }
