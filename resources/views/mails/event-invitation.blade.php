@@ -28,7 +28,8 @@
             font-size: 16px;
             margin: 10px 0;
         }
-        a {
+
+        .accept, .reject {
             display: inline-block;
             margin: 20px 0;
             padding: 10px 20px;
@@ -38,8 +39,15 @@
             border-radius: 5px;
             font-size: 16px;
         }
-        a:hover {
+
+        .reject {
+            background-color: #ff3f3f;
+        }
+        .accept:hover {
             background-color: #218838;
+        }
+        .reject:hover {
+            background-color: #fd2e2e;
         }
         .footer {
             margin-top: 20px;
@@ -51,11 +59,11 @@
 <body>
     <div class="container">
         <h1>You're Invited to {{ $invitee->event->name }}!</h1>
-        <p>{{ $invitee->user->name }} has invited you to join them at <strong>{{ $invitee->event->name }}</strong>.</p>
+        <p>{{ $invitee->user->name ?? $invitee->user->email }} has invited you to join them at <strong>{{ $invitee->event->name }}</strong>.</p>
         <p><strong>Event Details:</strong></p>
         <ul>
             @php
-                $eventDetails = ''
+                $eventDetails = '';
                 switch ($invitee->event->type) {
                     case 'physical':
                         $eventDetails = $invitee->event->location;
@@ -69,14 +77,17 @@
                         $eventDetails = '';
                 }
             @endphp
-            <li>Event Invitation Code: {{ $invite->code }}</li>
+            <li><strong>Event Invitation Code:</strong> {{ $invitee->code }}</li>
             <li><strong>Date:</strong> {{ $invitee->event->start_date }}</li>
             <li><strong>Time:</strong> {{ $invitee->event->start_time }}</li>
-            <li><strong>Location:</strong> {{ $invitee->event->type == 'physical' ? $invitee->event->location : $invitee->event->type == 'virtual' ? $invitee->event->stream_url : '' }}</li>
+            <li><strong>Location:</strong> {{ $eventDetails }}</li>
         </ul>
-        <a href="{{ $invitee->invitation_url }}">Accept Invitation</a>
-        <p>If you have any questions, feel free to reach out to [Your Contact Information].</p>
-        <p class="footer">This invitation was sent on behalf of [Your Name] via [Platform Name].</p>
+        <div style="text-align: center">
+            <a class="accept" href="{{ $invitee->invitation_url .'?status=accepted' }}">Accept</a>
+            <a class="reject" href="{{ $invitee->invitation_url .'?status=rejected' }}">Reject</a>
+        </div>
+        <p>If you have any questions, feel free to reach out to .</p>
+        <p class="footer">This invitation was sent on behalf of {{ $invitee->user->name }} via {{ env('APP_NAME ') }}.</p>
     </div>
 </body>
 </html>

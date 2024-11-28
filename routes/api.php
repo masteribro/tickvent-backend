@@ -59,10 +59,11 @@ Route::group(['prefix'=>'v1'],function() {
 
             Route::get("/verify-ticket/{purchase_ticket_id}", [TicketApiController::class, "verifyTicket"]); // verify ticket
 
-            Route::get("/ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "verifyTicket"]); // verify ticket
+            Route::middleware('ticket-owner')->group(function() {
+                Route::get("/ticket/{purchase_ticket_id}", [TicketApiController::class, "getPurchasedTickets"]); // Ticket owner middleWare
 
-            Route::post("/ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "sendTicketInvite"]); // verify ticket
-
+                Route::post("/ticket/{purchase_ticket_id}/invites", [TicketApiController::class, "sendTicketInvite"]); // Ticket owner middleWare
+            });
 
             // Route::post("/order", [EventApiController::class, ""]);
             // Route::post("/cart", [EventApiController::class, ""]);
@@ -107,6 +108,8 @@ Route::group(['prefix'=>'v1'],function() {
         });
 
     });
+
+    Route::get("events/ticket/{purchased_ticket_id}/invite/accept-or-reject/{invitation_code}", [TicketApiController::class, "updateTicketInvitation"])->name('events.invitation_url'); // verify ticket
 
     Route::post('/callback_url/{gateway}/webhook',  );
 });

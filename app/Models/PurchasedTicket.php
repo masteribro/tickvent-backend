@@ -16,4 +16,9 @@ class PurchasedTicket extends Model
         return $this->belongsTo(Event::class);
     }
 
+    public function invitees()
+    {
+        return $this->hasMany(EventInvitee::class);
+    }
+
 }

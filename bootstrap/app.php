@@ -14,7 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdminMiddleware::class,
-            'event-owner' => \App\Http\Middleware\VerifyEventOwnerMiddleware::class
+            'event-owner' => \App\Http\Middleware\VerifyEventOwnerMiddleware::class,
+            'ticket-owner' => \App\Http\Middleware\TicketOwnerMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

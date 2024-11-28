@@ -90,6 +90,8 @@ class TicketApiController extends Controller
 
     public function sendTicketInvite(Request $request, $purchase_ticket_id)
     {
+        try {
+
         $purchaseTicket = PurchasedTicket::find($purchase_ticket_id);
 
         if(!$purchaseTicket) {
@@ -122,6 +124,72 @@ class TicketApiController extends Controller
             return ResponseHelper::errorResponse("Validation error",$validator->errors());
         }
 
-        $resp = $this->ticketService->sendInvitation($invitee_email, $ticket_owner_id, $event_id, $purchase_ticket_id);
+        $resp = $this->ticketService->sendInvitation($request->email, $purchaseTicket);
+
+            if($resp['status']) {
+                return ResponseHelper::successResponse("Invitation has been sent");
+            }
+        } catch(\Throwable $th) {
+            Log::warning("Error in Sending invitation on Ticket Controller",[
+                'error' => $th
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to send invitation, try again later");
+    }
+
+    public function updateTicketInvitation($purchase_ticket_id, $invitation_code)
+    {
+        try {
+            $status = request('status');
+
+            $resp = $this->ticketService->updateTicketInvitation($status, $purchase_ticket_id, $invitation_code);
+
+
+            // return $resp;
+            return view('events.update-event-invitation',[
+                'status' => $resp['status'] === false ? "not-found" : $resp['data']->status,
+                'invitee' => $resp['data'] ?? null
+            ]);
+
+        } catch (\Throwable $th) {
+
+            Log::error('Error occurred: ', [
+                'message' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+        }
+        return view('events.update-event-invitation',[
+            'status' => false,
+            'invitee' => null
+        ]);
+    }
+
+    public function getPurchasedTickets()
+    {
+        try {
+
+            $user = request()->user();
+
+            $purchaseTickets = PurchasedTicket::with([
+                'invitees', 'event'
+            ])->where('user_id', $user->id)->where('status', 'paid')->orderByDesc('created_at')->get();
+
+            return ResponseHelper::successResponse('Booked Tickets', $purchaseTickets);
+
+        } catch(\Throwable $th)
+        {
+            Log::error('Error occurred: ', [
+                'message' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+        }
+
+        return ResponseHelper::errorResponse('Something went wrong, please try again later');
+
     }
 }

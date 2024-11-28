@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EventInvitee;
+use App\Models\PurchasedTicket;
 use App\Models\Ticket;
 use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +91,7 @@ class TicketService {
         ];
     }
 
-    public static function sendInvitation($invitee_email, $ticket_owner_id, $event_id, $purchase_ticket_id)
+    public static function sendInvitation($invitee_email, PurchasedTicket $purchasedTicket)
     {
         try {
             DB::beginTransaction();
@@ -99,14 +100,27 @@ class TicketService {
 
             $invitee = EventInvitee::firstOrCreate([
                 'email' => $invitee_email,
-                'event_id' => $event_id,
-                'user_id' => $ticket_owner_id,
-                'purchased_ticket_id' => $purchase_ticket_id
+                'event_id' => $purchasedTicket->event_id,
+                'user_id' => $purchasedTicket->user_id,
+                'purchased_ticket_id' => $purchasedTicket->id,
+                'code' => 'TKVT' . time()
+            ]);
+            $invitee->update([
+                'invitation_url' => route('events.invitation_url',[
+                    'purchased_ticket_id' => $invitee->purchased_ticket_id,
+                    'invitation_code' => $invitee->code
+                    ])
             ]);
 
             $invitee->refresh();
-            
+
             NotificationService::sendEventInvitation($invitee);
+
+            DB::commit();
+
+            return [
+                'status' => true
+            ];
 
         }  catch (\Throwable $th) {
             DB::rollback();
@@ -114,5 +128,49 @@ class TicketService {
                 'error' => $th
             ]);
         }
+
+        return [
+            'status' => false
+        ];
+    }
+
+    public function updateTicketInvitation($status, $purchase_ticket_id, $invitation_code) {
+        try {
+            DB::beginTransaction();
+            $invitee = EventInvitee::where('code', $invitation_code)->first();
+
+            if(!$invitee) {
+                return [
+                    'status' => false,
+                    'message' => "Wrong Invitation Code"
+                ];
+            }
+            if($invitee->status === 'pending') {
+                $invitee->update([
+                    'status' => $status
+                ]);
+            }
+                $invitee->refresh();
+            DB::commit();
+            return [
+                'status' => true,
+                "data" => $invitee
+            ];
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            Log::error('Error occurred: ', [
+                'message' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+
+        }
+
+        return [
+            'status' => false,
+            'message' => "Something went wrong, try again later"
+        ];
     }
 }
