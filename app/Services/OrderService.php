@@ -20,7 +20,7 @@ class OrderService {
         $this->paymentService = (new PaymentService);
     }
 
-    
+
     public function getPaymentUrl($data)
     {
         try {
@@ -48,7 +48,7 @@ class OrderService {
                     $item_name = $attachment->name;
                     $item_price = (int) $attachment->price;
                 }
-                
+
                 $total += (int) $item["quantity"] * $item_price;
                 OrderItem::create([
                     'item_id' => $item['id'],
@@ -61,7 +61,7 @@ class OrderService {
                 ]);
 
             });
-            
+
             $order->update([
                 'total_amount' => $total
             ]);
@@ -70,9 +70,10 @@ class OrderService {
             $data['email'] = request()->user()->email;
             $data['currency'] = 'NGN';
             $data['metadata'] = $data;
+            $data['reference'] = 'TKVT' . time();
 
             $resp = $this->generatePaymentUrl($data);
-            
+
             if($resp['status']) {
                 DB::commit();
 
@@ -83,13 +84,13 @@ class OrderService {
                         'checkout_url' => $order->authorization_url
                     ]
                 ];
-            }             
+            }
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::warning("error in ordering service ",[
                 '' => $th->getMessage() . ' on line '. $th->getLine() . ' in ' . $th->getFile()
             ]);
-        } 
+        }
 
         return [
             'status' => false
@@ -116,6 +117,45 @@ class OrderService {
 
         return [
             'status' => false,
+        ];
+    }
+
+    public function updateOrder( string $reference)
+    {
+        try {
+            DB::beginTransaction();
+
+            $order = Order::where('reference', $reference)->first();
+
+            if($order) {
+                $order->update([
+                    'status' => 'paid'
+                ]);
+
+                DB::commit();
+
+                return [
+                    'status' => true
+                ];
+            }
+
+            return [
+                'status' => false,
+                'message' => "Order not Found"
+            ];
+
+            DB::commit();
+
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::warning('Error in updating order',[
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => false,
+            'message' => "Unable to update order status"
         ];
     }
 }

@@ -217,4 +217,47 @@ class PaystackService
                 "message" => "Unable to verify transaction"
             ];
     }
+
+    public function handleWebHook($reference) {
+        try {
+
+
+            $verify = $this->verifyWebhook();
+
+            if($verify) {
+                return $this->verifyTransaction($reference);
+            }
+
+            return [
+                'status' => false,
+                'message' => "Invalid Webhook Request"
+            ];
+
+        } catch (\Throwable $th) {
+            Log::warning("error in handling webhook",[
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => false,
+            'message' => "Unable to handle webhook request"
+        ];
+    }
+
+    private function verifyWebhook()
+    {
+        $request = request();
+
+        $signature = $request->header('x-paystack-signature');
+
+
+        $calculatedSignature = hash_hmac('sha512', $request->getContent(), ''. $this->secret_key);
+
+        if ($signature !== $calculatedSignature) {
+            return false;
+        }
+
+        return true;
+    }
 }

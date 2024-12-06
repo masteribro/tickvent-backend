@@ -20,7 +20,7 @@ return new class extends Migration
             $table->bigInteger('total_amount')->nullable();
             $table->longText('access_code')->nullable();
             $table->longText('authorization_url')->nullable();
-            $table->string('status')->default('pending');
+            $table->enum('status',['pending','paid','refunded'])->default('pending');
             $table->timestamps();
         });
     }

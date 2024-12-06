@@ -173,4 +173,42 @@ class TicketService {
             'message' => "Something went wrong, try again later"
         ];
     }
+
+    public function updateTicket($reference)
+    {
+        try {
+            DB::beginTransaction();
+
+            $purchasedTicket = PurchasedTicket::where('reference', $reference)->first();
+
+            if($purchasedTicket) {
+                $purchasedTicket->update([
+                    'status' => 'paid'
+                ]);
+
+                return [
+                    'status' => true
+                ];
+            }
+
+            DB::commit();
+
+            return [
+                'status' => false,
+                'message' => "Ticket not Found"
+            ];
+
+
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::warning('Error in creating invite and sending',[
+                'error' => $th
+            ]);
+        }
+
+        return [
+            'status' => false,
+            'message' => "Unable to update ticket status"
+        ];
+    }
 }

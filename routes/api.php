@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\ConfectionaryApiController;
 use App\Http\Controllers\Api\EventApiController;
 use App\Http\Controllers\Api\ItineraryApiController;
 use App\Http\Controllers\Api\OrderApiController;
+use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\TicketApiController;
 use App\Http\Controllers\Api\RolePermissionApiController;
+use App\Http\Controllers\EventFeedbackApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix'=>'v1'],function() {
@@ -20,7 +22,9 @@ Route::group(['prefix'=>'v1'],function() {
     Route::post("/verify-otp", [AuthApiController::class, 'verifyOtp']);
     Route::post("/send-otp", [AuthApiController::class, 'sendOtp']);
 
+    // Authenticated Routes
     Route::group(["middleware" => ['auth:sanctum']], function() {
+        // All users
         Route::post('/change-password', [AuthApiController::class, 'changePassword']);
 
         Route::group(['prefix' => 'banks'], static function () {
@@ -45,6 +49,10 @@ Route::group(['prefix'=>'v1'],function() {
 
         Route::get('/get-tickets', [AuthApiController::class, 'getTickets']);
 
+        // Attendee Endpoints
+        Route::post('/order-confectionary/{event_id}', [OrderApiController::class, 'orderConfectionary']);
+        
+        Route::post('/feedback/{event_id}', [EventFeedbackApiController::class, 'addFeedback']);
 
         Route::group(["prefix" => "events"], function() {
             Route::get("", [EventApiController::class, 'index']); // getting all events
@@ -69,8 +77,7 @@ Route::group(['prefix'=>'v1'],function() {
             // Route::post("/cart", [EventApiController::class, ""]);
         });
 
-        Route::post('/order-confectionary/{event_id}', [OrderApiController::class, 'orderConfectionary']);
-        // Manage Events Endppoints
+        // Manage Event Endpoints By Event Owner
         Route::group(["prefix" => "manage-event", 'middleware' => 'event-owner'], static function() {
 
             Route::get("/{event_id}/roles", [RolePermissionApiController::class, "getRolesToEvent"]);
@@ -100,17 +107,15 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
         });
 
-
         // Admin Endpoint
-
         Route::group(['prefix' => 'admin', ['middleware' => 'admin']], static function () {
             Route::patch("events/featured/{id?}",[AdminController::class, 'featuredEvent']);
         });
 
     });
 
-    Route::get("events/ticket/{purchased_ticket_id}/invite/accept-or-reject/{invitation_code}", [TicketApiController::class, "updateTicketInvitation"])->name('events.invitation_url'); // verify ticket
+    Route::get("/events/ticket/{purchased_ticket_id}/invite/accept-or-reject/{invitation_code}", [TicketApiController::class, "updateTicketInvitation"])->name('events.invitation_url'); // verify ticket
 
-    Route::post('/callback_url/{gateway}/webhook',  );
+    Route::post('/callback_url/{gateway}/webhook', [PaymentApiController::class, "handleWebHook"]  );
 });
 

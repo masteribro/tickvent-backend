@@ -2,7 +2,9 @@
 
 namespace App\Services\Payment;
 
+use App\Services\OrderService;
 use App\Services\Payment\Gateways\PaystackService;
+use App\Services\TicketService;
 use Illuminate\Support\Facades\Log;
 
 class PaymentService {
@@ -59,6 +61,58 @@ class PaymentService {
         return [
             'status' => false
         ];
+    }
+
+    public function handleWebHook($gateway, $payload)
+    {
+        try {
+
+            if($gateway === 'paystack') {
+
+                $resp = (new PaystackService)->handleWebHook($payload['data']['reference']);
+
+                if($resp['status']) {
+                    $data = $resp['data'];
+
+                    $metaData = $data['metadata'];
+
+
+                    if($data['status'] === 'success') {
+                        $resp = [];
+
+                        if($metaData['payment_for'] == 'confectionary_order') {
+                            $orderService = (new OrderService());
+
+                            $resp = $orderService->updateOrder($data['reference']);
+                        }
+
+                        if($metaData['payment_for'] == 'book_ticket') {
+                            $ticket = (new TicketService());
+
+                            $resp = $ticket->updateTicket($data['reference']);
+                        }
+
+                    }
+
+                    return $resp;
+                }
+
+                return [
+                    'status' => false,
+                    'message' => $resp['message']
+                ];
+            }
+        }  catch (\Throwable $th) {
+            Log::warning("error in verifying transaction",[
+                '' => $th->getMessage() . ' on line '. $th->getLine() . ' in ' . $th->getFile()
+            ]);
+        }
+
+        return [
+            'status' => false,
+            'message' => 'Something went wrong, please try again later'
+        ];
+
     }
 }
 
