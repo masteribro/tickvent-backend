@@ -51,8 +51,7 @@ Route::group(['prefix'=>'v1'],function() {
 
         // Attendee Endpoints
         Route::post('/order-confectionary/{event_id}', [OrderApiController::class, 'orderConfectionary']);
-        
-        Route::post('/feedback/{event_id}', [EventFeedbackApiController::class, 'addFeedback']);
+
 
         Route::group(["prefix" => "events"], function() {
             Route::get("", [EventApiController::class, 'index']); // getting all events
@@ -60,6 +59,10 @@ Route::group(['prefix'=>'v1'],function() {
             Route::post('/create', [EventApiController::class, 'createEvent']); // create events
 
             Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // getting specific event(s)
+
+            Route::post('/feedback', [EventFeedbackApiController::class, 'addFeedback']);
+
+            Route::post('/rating/{event_id}', [EventFeedbackApiController::class, 'rateEvent']);
 
             Route::post('/interested/{event_id}',[EventApiController::class, 'interestedEvent']);
 
@@ -105,6 +108,9 @@ Route::group(['prefix'=>'v1'],function() {
 
 
             Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
+
+            Route::get('/feedback/{event_id}', [EventFeedbackApiController::class, 'getEventFeedbacks']);
+
         });
 
         // Admin Endpoint

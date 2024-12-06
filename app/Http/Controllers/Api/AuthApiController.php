@@ -120,7 +120,7 @@ class AuthApiController extends Controller
                 $resp = OtpService::sendOtp("registration", $user);
                 if(!$resp['status']) {
                     Log::warning("Unable to send Otp");
-                    return ResponseHelper::errorResponse("Unable to send verificatio code, please try again");
+                    return ResponseHelper::errorResponse("Unable to send verification code, please try again");
                 }
                 return ResponseHelper::errorResponse("Verify your account, Verification code has been sent to this email");
             } else if(!Hash::check($request->passcode ?? $request->password, $user->password)) {

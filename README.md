@@ -1,18 +1,4 @@
-## About Tickvent App
-
-
-## How to use Tickvent
-
-## Tickvent Sponsors
-
-### Premium Partners
-
-## Contributing
-
-## Code of Conduct
-
-
-## Security Vulnerabilities
-
-
-## License
+## Work Flow to work
+Setting Reminders Job,
+Setting Notification in event creation,
+ 
