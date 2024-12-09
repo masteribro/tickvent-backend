@@ -33,6 +33,8 @@ return new class extends Migration
             $table->boolean("is_complete")->default(false)->nullable();
             $table->boolean("is_free")->default(false)->nullable();
             $table->boolean("featured")->default(false)->nullable();
+            $table->boolean('status')->default(0);
+
             $table->enum("type", ['physical','virtual', 'hybrid'])->default('physical');
             $table->longText("tags")->nullable();
             $table->integer("rating")->nullable();
