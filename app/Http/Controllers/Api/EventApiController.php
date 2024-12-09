@@ -8,6 +8,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\BreakLog;
 use App\Models\EventOrganizer;
 use App\Models\EventTag;
 use App\Models\PurchasedTicket;
@@ -78,7 +79,7 @@ class EventApiController extends Controller
             return ResponseHelper::successResponse("Events retrived successfully",$events->get());
 
 
-    } catch(\Throwable $throwable) {
+     } catch(\Throwable $throwable) {
             Log::warning("Getting Events Error",[
                 "" => $throwable
             ]);
@@ -173,14 +174,6 @@ class EventApiController extends Controller
 
         return ResponseHelper::errorResponse("Unable to create event");
     }
-
-    public function addOrganizer(Request $request)
-    {
-
-
-    }
-
-
     public function getEvent(Request $request, $idOrSlug)
     {
         try {
@@ -251,17 +244,6 @@ class EventApiController extends Controller
             }
 
         return ResponseHelper::errorResponse("Unable to add tickets, try again later");
-    }
-
-
-    public function destroy(Request $request, Event $event)
-    {
-
-    }
-
-    public function featuredEvent($id)
-    {
-        return "kdskdk";
     }
 
     public function bookEvent(Request $request, $event_id)
@@ -342,5 +324,36 @@ class EventApiController extends Controller
         return [
             'status' => false,
         ];
+    }
+
+    public function addBreakLog(Request $request)
+    {
+        try {
+
+            $validator = \Validator::make($request->all(),[
+                'event_id' => ['required', 'exists:events,id'],
+                'reason' => ['required','string'],
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation Error", $validator->errors());
+            }
+
+            BreakLog::create([
+                'attendee' => auth()->user()->id,
+                'reason' => request('reason'),
+                'event_id' => request('event_id'),
+                'break_time' => Carbon::now()
+            ]);
+
+            return ResponseHelper::successResponse("Break Logged successfully");
+
+        } catch (\Throwable $th) {
+            Log::warning('Error in adding logs', [
+                'error' => $th
+            ]);
+        }
+
+        return ResponseHelper::errorResponse("Unable to log activity");
     }
 }

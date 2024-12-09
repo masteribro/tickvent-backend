@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(User::class, 'attendee');
             $table->foreignIdFor(Event::class, 'event_id');
-            $table->string('reason')->nullable();
+            $table->longText('reason')->nullable();
             $table->dateTime('break_time');
             $table->dateTime('resume_time')->nullable();
             $table->timestamps();
