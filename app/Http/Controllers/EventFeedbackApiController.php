@@ -55,7 +55,7 @@ class EventFeedbackApiController extends Controller
                 return ResponseHelper::errorResponse("Events  doesn't exists");
             }
 
-            $feedbacks = Feedback::where('event_id',$event->id)->get();
+            $feedbacks = Feedback::with(['event', 'user'])->where('event_id',$event->id)->get();
 
             return ResponseHelper::successResponse("Feedbacks for event retrieved it successfully", $feedbacks);
 
@@ -82,10 +82,11 @@ class EventFeedbackApiController extends Controller
                 return ResponseHelper::errorResponse("Validation Error", $validator->errors());
             }
 
-            EventRating::create([
+            EventRating::updateOrCreate([
                 'event_id' => $request->event_id,
-                'rating' => $request->rating,
                 'user_id' => $request->user()->id
+            ],[
+                'rating' => $request->rating
             ]);
 
             return ResponseHelper::successResponse("Event rated successfully");
