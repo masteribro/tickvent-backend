@@ -356,4 +356,8 @@ class EventApiController extends Controller
 
         return ResponseHelper::errorResponse("Unable to log activity");
     }
+
+    public function getBreakLogsReason() {
+        return ResponseHelper::successResponse('Break Log Reason fetched', getBreakLogsReason());
+    }
 }

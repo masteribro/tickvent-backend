@@ -23,13 +23,13 @@ class NotificationService {
 
     public function getNotifications($user)
     {
-        $notification_types = ['happenning-around', 'new-event', 'ticket-gift', 'event-invite','login'];
+        $notification_types = ['happenning-around', 'new-event', 'ticket-gift', 'event-invite','login', 'event-reminder'];
         $channels = ['email', 'sms'];
 
         foreach($channels as $channel) {
             $notification_types = collect($notification_types);
             $notification_types->map(function ($item) use($user, $channel) {
-                Notification::updateOrCreate(
+                Notification::firstOrCreate(
                     [
                         'user_id' => $user->id,
                         "channel" => $channel,

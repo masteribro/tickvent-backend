@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'event-owner' => \App\Http\Middleware\VerifyEventOwnerMiddleware::class,
             'ticket-owner' => \App\Http\Middleware\TicketOwnerMiddleware::class,
         ]);
-    })
-    ->withExceptions(function (Exceptions $exceptions) {
+    })->withSchedule(function (Schedule $schedule) {
+        $schedule->command('tickvent:send-reminder')
+            ->withoutOverlapping()
+            ->dailyAt("15:00:00");
+    })->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

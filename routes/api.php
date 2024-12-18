@@ -53,6 +53,7 @@ Route::group(['prefix'=>'v1'],function() {
         Route::post('/order-confectionary/{event_id}', [OrderApiController::class, 'orderConfectionary']);
         Route::post('/feedback', [EventFeedbackApiController::class, 'addFeedback']);
         Route::post('/events/break-log', [EventApiController::class, 'addBreakLog']);
+        Route::get('/events/break-log-reasons', [EventApiController::class, 'getBreakLogsReason']);
 
 
         Route::group(["prefix" => "events"], function() {
