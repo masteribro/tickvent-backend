@@ -8,6 +8,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Jobs\NewEventNotificationJob;
 use App\Models\BreakLog;
 use App\Models\EventOrganizer;
 use App\Models\EventTag;
@@ -157,6 +158,8 @@ class EventApiController extends Controller
                     "location" => $request->location,
                     "is_free" => $request->is_free
                 ]);
+
+                NewEventNotificationJob::dispatch($event);
 
                 $images_or_video = EventImageService::saveImages($event, $request->images ?? []);
 

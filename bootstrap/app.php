@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })->withSchedule(function (Schedule $schedule) {
         $schedule->command('tickvent:send-reminder')
             ->withoutOverlapping()
-            ->dailyAt("15:00:00");
+            ->dailyAt("19:10:00");
     })->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
