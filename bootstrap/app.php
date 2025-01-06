@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web([
+            HandleInertiaRequests::class
+        ]);
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdminMiddleware::class,
             'event-owner' => \App\Http\Middleware\VerifyEventOwnerMiddleware::class,
