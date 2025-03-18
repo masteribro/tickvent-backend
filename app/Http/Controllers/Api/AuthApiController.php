@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\OtpService;
 use App\Services\UserService;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -84,8 +85,8 @@ class AuthApiController extends Controller
             }
 
             $user->update([
-                "api_token" => $user->createToken($user->email)->plainTextToken,
-                "api_test_token" => $user->createToken($user->email)->plainTextToken,
+                "api_token" => $user->createToken($user->email, ['*'], Carbon::now()->addHours(2))->plainTextToken,
+                "api_test_token" => $user->createToken($user->email,  ['*'], Carbon::now()->addHours(2))->plainTextToken,
                 "is_verified" => true
             ]);
 

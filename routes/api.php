@@ -50,10 +50,13 @@ Route::group(['prefix'=>'v1'],function() {
         Route::get('/get-tickets', [AuthApiController::class, 'getTickets']);
 
         // Attendee Endpoints
+        // TODO:: I will create a middleware that checks if a use has ability to do the action
         Route::post('/order-confectionary/{event_id}', [OrderApiController::class, 'orderConfectionary']);
-        Route::post('/feedback', [EventFeedbackApiController::class, 'addFeedback']);
+        Route::post('/events/feedback', [EventFeedbackApiController::class, 'addFeedback']);
         Route::post('/events/break-log', [EventApiController::class, 'addBreakLog']);
         Route::get('/events/break-log-reasons', [EventApiController::class, 'getBreakLogsReason']);
+        Route::post('/rating/{event_id}', [EventFeedbackApiController::class, 'rateEvent']);
+
 
 
         Route::group(["prefix" => "events"], function() {
@@ -63,8 +66,7 @@ Route::group(['prefix'=>'v1'],function() {
 
             Route::get('/{idOrSlug}', [EventApiController::class, 'getEvent']); // getting specific event(s)
 
-
-            Route::post('/rating/{event_id}', [EventFeedbackApiController::class, 'rateEvent']);
+            Route::get("/{event_id}/confectionary/{allOrId}", [ConfectionaryApiController::class, "getEventConfectionary"]);
 
             Route::post('/interested/{event_id}',[EventApiController::class, 'interestedEvent']);
 
@@ -107,7 +109,6 @@ Route::group(['prefix'=>'v1'],function() {
 
             Route::post("/add-worker", [EventApiController::class, "addEventWorker"]);
             Route::delete("/delete-workers", [EventApiController::class, "deleteEventWorkers"]);
-
 
             Route::post('/ticket/{event_id}', [TicketApiController::class, 'addTickets']);
 
