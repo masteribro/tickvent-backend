@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(User::class,'user_id');
-            $table->string('channel')->enum(['sms', 'email']);
+            $table->enum('channel',['sms', 'email']);
             $table->string('type');
             $table->boolean('value')->default(false);
             $table->timestamps();
