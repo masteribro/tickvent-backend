@@ -85,8 +85,8 @@ class AuthApiController extends Controller
             }
 
             $user->update([
-                "api_token" => $user->createToken($user->email, ['*'], Carbon::now()->addHours(2))->plainTextToken,
-                "api_test_token" => $user->createToken($user->email,  ['*'], Carbon::now()->addHours(2))->plainTextToken,
+                "api_token" => $user->createToken($user->email)->plainTextToken,
+                "api_test_token" => $user->createToken($user->email)->plainTextToken,
                 "is_verified" => true
             ]);
 
@@ -128,18 +128,9 @@ class AuthApiController extends Controller
                 return ResponseHelper::errorResponse("Invalid credentials, please confirmed or set your password");
             }
 
-            // if(!$user->email_verified_at) {
-
-            //     UserVerificationJob::dispatch($user);
-
-            //     return ResponseHelper::errorResponse("User not verifed",$user);
-            // }
-
-            // add device token implementation
-
             $user->device_token = $request->device_token;
-
             $user->save();
+
             return ResponseHelper::successResponse("Login successful", $user);
         } catch(\Throwable $throwable) {
             Log::warning('Login error', [
