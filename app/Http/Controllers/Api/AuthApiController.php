@@ -549,4 +549,46 @@ class AuthApiController extends Controller
             ]);
         }
     }
+
+    public function setPassword(Request $request)
+    {
+        try {
+            $validator = \Validator::make(request()->all(), [
+                'email' => "required|email",
+                "is_mobile" => "required|boolean",
+                "passcode" => "required_if:is_mobile,true|digits:6|confirmed",
+                "password" => ["required_if:is_mobile,false","confirmed",Password::min(8)->letters()->numbers()->mixedCase()->symbols()],
+            ]);
+
+            if($validator->fails()) {
+                return ResponseHelper::errorResponse("Validation message", $validator->errors(), 422);
+            }
+
+            $email = request('email');
+            $password = request('password') ?? request("passcode");
+
+            $user = UserService::getUser($email);
+
+                if($user == null) {
+                    return ResponseHelper::errorResponse("User not found");
+                }
+                $passwordOrPasscode = $request->is_mobile ? "Password" : "Passcode";
+                if($user->password) {
+                    return ResponseHelper::errorResponse("$passwordOrPasscode already set");
+                }
+
+                $user->update([
+                        "password" => Hash::make($password),
+                        "password_reset_time" => now()->format("Y-m-d H:i:s")
+                    ]);
+                return ResponseHelper::successResponse("$passwordOrPasscode set successfully");
+
+            } catch (\Exception $e) {
+                Log::warning("change password error",[
+                    "" => $e
+                ]);
+            }
+
+            return ResponseHelper::errorResponse("Unable to set password");
+        }
 }

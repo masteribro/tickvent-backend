@@ -17,6 +17,7 @@ Route::group(['prefix'=>'v1'],function() {
     Route::post('/register', [AuthApiController::class, 'register']); // endpoint for password
     Route::post('/register-verification', [AuthApiController::class, 'registerVerification']); // endpoint for password
     Route::post('/login', [AuthApiController::class, 'login']);
+    Route::post('/set-password', [AuthApiController::class, 'setPassword']);
     Route::post('/reset-password', [AuthApiController::class, 'resetPassword']);
 
     Route::post("/verify-otp", [AuthApiController::class, 'verifyOtp']);
