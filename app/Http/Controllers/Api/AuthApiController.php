@@ -572,7 +572,7 @@ class AuthApiController extends Controller
                 if($user == null) {
                     return ResponseHelper::errorResponse("User not found");
                 }
-                $passwordOrPasscode = $request->is_mobile ? "Password" : "Passcode";
+                $passwordOrPasscode = !$request->is_mobile ? "Password" : "Passcode";
                 if($user->password) {
                     return ResponseHelper::errorResponse("$passwordOrPasscode already set");
                 }
