@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Helpers\ResponseHelper;
 use App\Models\User;
 
-class UserService 
+class UserService
 {
-    public static function getUser($identifier) 
+    public static function getUser($identifier)
     {
         return User::where("email", $identifier)->orWhere('id', $identifier)->orWhere("phone_number",$identifier)->orWhere("api_token", $identifier)->first() ?? null;
     }
@@ -30,10 +30,11 @@ class UserService
             $resp = retry(3, function () use ($user) {
                 return OtpService::sendOtp('registration', $user);
             });
-    
+
             if($resp["status"]) {
                 return [
                     'status' => true,
+                    'data' => $user,
                     "message" => "Verification code sent"
                 ];
             } else {
@@ -44,7 +45,7 @@ class UserService
             }
         } else {
             if($user->is_verified) {
-                
+
                 return [
                     'status' => false,
                     "message" => "User already exists"
