@@ -590,5 +590,42 @@ class AuthApiController extends Controller
             }
 
             return ResponseHelper::errorResponse("Unable to set password");
+    }
+
+    public function hasSetPassword(Request $request)
+    {
+        try {
+                $validator = \Validator::make(request()->all(), [
+                    'email' => "required|email",
+                ]);
+
+                if($validator->fails()) {
+                    return ResponseHelper::errorResponse("Validation message", $validator->errors(), 422);
+                }
+
+                $email = request('email');
+
+                $user = UserService::getUser($email);
+
+                if($user == null) {
+                    return ResponseHelper::errorResponse("User not found");
+                }
+                if($user->password) {
+                    return response()->json([
+                        'status' => true
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'status' => false
+                    ], 200);
+                }
+
+        } catch (\Exception $e) {
+                Log::warning("change password error",[
+                    "" => $e
+                ]);
         }
+
+        return ResponseHelper::errorResponse("Server Error");
+    }
 }
