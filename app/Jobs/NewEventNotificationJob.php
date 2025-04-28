@@ -76,7 +76,7 @@ class NewEventNotificationJob implements ShouldQueue
     {
 
             if($type === 'email') {
-                Mail::to($users->pluck('email'))->send(new NewEventNotificationMail($event));
+                Mail::to($users->pluck('email')->toArray())->send(new NewEventNotificationMail($event));
             }
             // else if($type === 'sms') {
             //     (new SmsMessage)->sendBulk($attendees->pluck('phone_number'), env("APP_NAME"), "Message Here");
