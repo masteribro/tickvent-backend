@@ -617,7 +617,7 @@ class AuthApiController extends Controller
                 } else {
                     return response()->json([
                         'status' => false
-                    ], 422);
+                    ], 200);
                 }
 
         } catch (\Exception $e) {
