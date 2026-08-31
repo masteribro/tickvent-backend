@@ -51,7 +51,7 @@ class AuthApiController extends Controller
         $resp = UserService::registerUser(request('email'));
 
         if($resp["status"]) {
-            return ResponseHelper::successResponse($resp["message"], $resp['data']);
+            return ResponseHelper::successResponse($resp["message"], $resp['data'] ?? [], 201);
         }
 
         return ResponseHelper::errorResponse($resp["message"]);
